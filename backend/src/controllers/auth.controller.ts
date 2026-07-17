@@ -384,6 +384,14 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
         return;
       }
 
+      let isNewUser = false;
+      if (user.role === 'gym_owner') {
+        const gym = await Gym.findOne({ ownerId: user._id });
+        if (!gym) {
+          isNewUser = true;
+        }
+      }
+
       const token = generateToken(user.id);
       
       await Session.create({
@@ -399,6 +407,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
         email: user.email,
         profileImage: user.profileImage,
         role: user.role,
+        isNewUser,
         token,
       });
     } else {
@@ -448,6 +457,13 @@ export const googleLogin = async (req: Request, res: Response): Promise<void> =>
       if (profileImage && user.profileImage !== profileImage) {
         user.profileImage = profileImage;
         await user.save();
+      }
+    }
+    // Check if user is a gym owner and actually has a gym
+    if (!isNewUser && user.role === 'gym_owner') {
+      const gym = await Gym.findOne({ ownerId: user._id });
+      if (!gym) {
+        isNewUser = true;
       }
     }
 

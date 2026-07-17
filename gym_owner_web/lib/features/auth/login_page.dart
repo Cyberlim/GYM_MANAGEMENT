@@ -114,7 +114,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ref.read(userProvider.notifier).refresh();
 
           if (mounted) {
-            context.go('/dashboard');
+            if (response['isNewUser'] == true) {
+              context.go('/gym-setup');
+            } else {
+              context.go('/dashboard');
+            }
           }
         }
       }
