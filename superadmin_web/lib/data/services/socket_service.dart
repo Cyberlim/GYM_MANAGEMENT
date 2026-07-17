@@ -1,3 +1,4 @@
+import 'package:superadmin_web/core/config/env.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:flutter/foundation.dart';
 
@@ -17,7 +18,7 @@ class SocketService {
   void initSocket(String adminId) {
     if (_socket != null && _socket!.connected) return;
 
-    _socket = IO.io('http://localhost:5000', <String, dynamic>{
+    _socket = IO.io('${Env.socketUrl}', <String, dynamic>{
       'transports': ['websocket'],
       'autoConnect': false,
     });

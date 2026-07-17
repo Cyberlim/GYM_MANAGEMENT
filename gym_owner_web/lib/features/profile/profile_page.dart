@@ -1,3 +1,4 @@
+import 'package:gym_owner_web/core/config/env.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -466,7 +467,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       final prefs = await SharedPreferences.getInstance();
                       final token = prefs.getString('token');
                       
-                      var uri = Uri.parse('http://localhost:5000/api/auth/profile-image');
+                      var uri = Uri.parse('${Env.apiUrl}/auth/profile-image');
                       var request = http.MultipartRequest('PUT', uri);
                       request.headers['Authorization'] = 'Bearer $token';
                       
@@ -572,7 +573,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       final prefs = await SharedPreferences.getInstance();
                       final token = prefs.getString('token');
                       final response = await http.put(
-                        Uri.parse('http://localhost:5000/api/auth/profile'),
+                        Uri.parse('${Env.apiUrl}/auth/profile'),
                         headers: {
                           'Authorization': 'Bearer $token',
                           'Content-Type': 'application/json',
@@ -707,7 +708,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       
                       // 1. Update text fields
                       final response = await http.put(
-                        Uri.parse('http://localhost:5000/api/auth/profile'),
+                        Uri.parse('${Env.apiUrl}/auth/profile'),
                         headers: {
                           'Authorization': 'Bearer $token',
                           'Content-Type': 'application/json',
@@ -725,7 +726,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
                       // 2. Upload new logo if selected
                       if (newLogo != null) {
-                        var request = http.MultipartRequest('PUT', Uri.parse('http://localhost:5000/api/auth/gym-logo'));
+                        var request = http.MultipartRequest('PUT', Uri.parse('${Env.apiUrl}/auth/gym-logo'));
                         request.headers['Authorization'] = 'Bearer $token';
                         var bytes = await newLogo!.readAsBytes();
                         var multipartFile = http.MultipartFile.fromBytes('logo', bytes, filename: newLogo!.name);

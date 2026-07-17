@@ -1,3 +1,4 @@
+import 'package:superadmin_web/core/config/env.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -74,7 +75,7 @@ class SupportNotifier extends Notifier<List<SupportTicket>> {
       if (token == null) return;
 
       final response = await http.get(
-        Uri.parse('http://localhost:5000/api/support/suspensions'),
+        Uri.parse('${Env.apiUrl}/support/suspensions'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -87,7 +88,7 @@ class SupportNotifier extends Notifier<List<SupportTicket>> {
 
           // Fetch messages for this suspension
           final msgResponse = await http.get(
-            Uri.parse('http://localhost:5000/api/support/suspensions/$suspensionId'),
+            Uri.parse('${Env.apiUrl}/support/suspensions/$suspensionId'),
             headers: {'Authorization': 'Bearer $token'},
           );
 
@@ -170,7 +171,7 @@ class SupportNotifier extends Notifier<List<SupportTicket>> {
         if (token == null) return;
 
         final response = await http.post(
-          Uri.parse('http://localhost:5000/api/support/suspensions/$ticketId'),
+          Uri.parse('${Env.apiUrl}/support/suspensions/$ticketId'),
           headers: {
             'Authorization': 'Bearer $token',
             'Content-Type': 'application/json',
@@ -245,7 +246,7 @@ class SupportNotifier extends Notifier<List<SupportTicket>> {
         if (token == null) return;
 
         await http.put(
-          Uri.parse('http://localhost:5000/api/support/suspensions/$ticketId/read'),
+          Uri.parse('${Env.apiUrl}/support/suspensions/$ticketId/read'),
           headers: {'Authorization': 'Bearer $token'},
         );
       } catch (e) {
@@ -262,7 +263,7 @@ class SupportNotifier extends Notifier<List<SupportTicket>> {
         if (token == null) return;
 
         final response = await http.delete(
-          Uri.parse('http://localhost:5000/api/support/suspensions/$ticketId/messages'),
+          Uri.parse('${Env.apiUrl}/support/suspensions/$ticketId/messages'),
           headers: {'Authorization': 'Bearer $token'},
         );
 

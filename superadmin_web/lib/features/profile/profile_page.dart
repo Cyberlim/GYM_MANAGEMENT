@@ -1,3 +1,4 @@
+import 'package:superadmin_web/core/config/env.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -61,7 +62,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     try {
       final response = await http.put(
-        Uri.parse('http://localhost:5000/api/auth/profile'),
+        Uri.parse('${Env.apiUrl}/auth/profile'),
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
@@ -121,7 +122,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     try {
       final response = await http.put(
-        Uri.parse('http://localhost:5000/api/auth/password'),
+        Uri.parse('${Env.apiUrl}/auth/password'),
         headers: {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',
@@ -193,7 +194,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         final prefs = await SharedPreferences.getInstance();
         final token = prefs.getString('token');
         if (token != null) {
-          final request = http.MultipartRequest('PUT', Uri.parse('http://localhost:5000/api/auth/profile-image'));
+          final request = http.MultipartRequest('PUT', Uri.parse('${Env.apiUrl}/auth/profile-image'));
           request.headers['Authorization'] = 'Bearer $token';
           request.files.add(http.MultipartFile.fromBytes('profileImage', bytes, filename: 'avatar.png'));
           

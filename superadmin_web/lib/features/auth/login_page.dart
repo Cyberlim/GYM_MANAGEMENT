@@ -1,3 +1,4 @@
+import 'package:superadmin_web/core/config/env.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -75,7 +76,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:5000/api/auth/login'),
+        Uri.parse('${Env.apiUrl}/auth/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': _emailController.text,
@@ -143,7 +144,7 @@ class _LoginPageState extends State<LoginPage> {
     });
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:5000/api/auth/send-fallback-2fa'),
+        Uri.parse('${Env.apiUrl}/auth/send-fallback-2fa'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'userId': _userIdFor2FA}),
       );
@@ -171,7 +172,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:5000/api/auth/verify-2fa'),
+        Uri.parse('${Env.apiUrl}/auth/verify-2fa'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'userId': _userIdFor2FA,

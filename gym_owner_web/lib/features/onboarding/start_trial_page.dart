@@ -1,3 +1,4 @@
+import 'package:gym_owner_web/core/config/env.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -27,7 +28,7 @@ class _StartTrialPageState extends State<StartTrialPage> {
       }
 
       final response = await http.post(
-        Uri.parse('http://localhost:5000/api/gyms/subscribe'),
+        Uri.parse('${Env.apiUrl}/gyms/subscribe'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

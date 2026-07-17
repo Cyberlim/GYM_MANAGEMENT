@@ -1,3 +1,4 @@
+import 'package:gym_owner_web/core/config/env.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,7 +27,7 @@ class UserNotifier extends AsyncNotifier<UserData?> {
     }
 
     final response = await http.get(
-      Uri.parse('http://localhost:5000/api/auth/me'),
+      Uri.parse('${Env.apiUrl}/auth/me'),
       headers: {'Authorization': 'Bearer $token'},
     );
 
@@ -62,7 +63,7 @@ class UserNotifier extends AsyncNotifier<UserData?> {
     if (token == null) throw Exception('No token found');
 
     final response = await http.put(
-      Uri.parse('http://localhost:5000/api/auth/settings'),
+      Uri.parse('${Env.apiUrl}/auth/settings'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -89,7 +90,7 @@ class UserNotifier extends AsyncNotifier<UserData?> {
     if (token == null) throw Exception('No token found');
 
     final response = await http.put(
-      Uri.parse('http://localhost:5000/api/auth/password'),
+      Uri.parse('${Env.apiUrl}/auth/password'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -112,7 +113,7 @@ class UserNotifier extends AsyncNotifier<UserData?> {
     if (token == null) throw Exception('No token found');
 
     final response = await http.post(
-      Uri.parse('http://localhost:5000/api/auth/2fa/setup'),
+      Uri.parse('${Env.apiUrl}/auth/2fa/setup'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -134,7 +135,7 @@ class UserNotifier extends AsyncNotifier<UserData?> {
     if (token == null) throw Exception('No token found');
 
     final response = await http.post(
-      Uri.parse('http://localhost:5000/api/auth/2fa/verify-setup'),
+      Uri.parse('${Env.apiUrl}/auth/2fa/verify-setup'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',

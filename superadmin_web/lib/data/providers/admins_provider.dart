@@ -1,3 +1,4 @@
+import 'package:superadmin_web/core/config/env.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -22,7 +23,7 @@ class AdminsNotifier extends Notifier<AsyncValue<List<AdminUser>>> {
       }
 
       final response = await http.get(
-        Uri.parse('http://localhost:5000/api/superadmin/admins'),
+        Uri.parse('${Env.apiUrl}/superadmin/admins'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -46,7 +47,7 @@ class AdminsNotifier extends Notifier<AsyncValue<List<AdminUser>>> {
       if (token == null) return 'No authentication token';
 
       final response = await http.post(
-        Uri.parse('http://localhost:5000/api/superadmin/admins'),
+        Uri.parse('${Env.apiUrl}/superadmin/admins'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -76,7 +77,7 @@ class AdminsNotifier extends Notifier<AsyncValue<List<AdminUser>>> {
       if (token == null) return 'No authentication token';
 
       final response = await http.delete(
-        Uri.parse('http://localhost:5000/api/superadmin/admins/$id'),
+        Uri.parse('${Env.apiUrl}/superadmin/admins/$id'),
         headers: {'Authorization': 'Bearer $token'},
       );
 

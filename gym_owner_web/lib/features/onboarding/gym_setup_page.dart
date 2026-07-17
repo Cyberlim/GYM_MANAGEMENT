@@ -1,3 +1,4 @@
+import 'package:gym_owner_web/core/config/env.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -64,7 +65,7 @@ class _GymSetupPageState extends ConsumerState<GymSetupPage> {
         throw Exception('You are not logged in');
       }
 
-      var request = http.MultipartRequest('POST', Uri.parse('http://localhost:5000/api/gyms/setup'));
+      var request = http.MultipartRequest('POST', Uri.parse('${Env.apiUrl}/gyms/setup'));
       request.headers['Authorization'] = 'Bearer $token';
       request.fields['name'] = name;
       request.fields['address'] = address;

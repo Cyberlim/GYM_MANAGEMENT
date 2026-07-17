@@ -9,7 +9,8 @@ export const setupGym = async (req: AuthRequest, res: Response): Promise<void> =
     let logo = '';
 
     if (req.file) {
-      logo = `http://localhost:5000/uploads/${req.file.filename}`;
+      const backendUrl = process.env.BACKEND_URL;
+      logo = `${backendUrl}/uploads/${req.file.filename}`;
     }
 
     if (!name || !address || !contactPhone) {

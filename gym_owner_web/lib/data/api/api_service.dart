@@ -1,3 +1,4 @@
+import 'package:gym_owner_web/core/config/env.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,7 +10,7 @@ class SuspensionException implements Exception {
 }
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:5000/api';
+  static String get baseUrl => Env.apiUrl;
 
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();

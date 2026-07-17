@@ -1,3 +1,4 @@
+import 'package:gym_owner_web/core/config/env.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -39,7 +40,7 @@ class _VerifyEmailPageState extends ConsumerState<VerifyEmailPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:5000/api/auth/verify-email'),
+        Uri.parse('${Env.apiUrl}/auth/verify-email'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'userId': widget.userId,

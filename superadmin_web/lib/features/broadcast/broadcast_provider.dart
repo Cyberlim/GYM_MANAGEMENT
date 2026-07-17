@@ -1,3 +1,4 @@
+import 'package:superadmin_web/core/config/env.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -73,7 +74,7 @@ class BroadcastStatusItem {
 }
 
 class BroadcastNotifier extends AsyncNotifier<void> {
-  static const String baseUrl = 'http://localhost:5000/api/superadmin';
+  static String get baseUrl => '${Env.apiUrl}/superadmin';
 
   Future<Map<String, String>> _getHeaders() async {
     final prefs = await SharedPreferences.getInstance();

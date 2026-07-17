@@ -1,3 +1,4 @@
+import 'package:superadmin_web/core/config/env.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -52,7 +53,7 @@ class NotificationNotifier extends Notifier<List<NotificationModel>> {
       if (token == null) return;
 
       final response = await http.get(
-        Uri.parse('http://localhost:5000/api/notifications'),
+        Uri.parse('${Env.apiUrl}/notifications'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -103,7 +104,7 @@ class NotificationNotifier extends Notifier<List<NotificationModel>> {
       if (token == null) return;
 
       final response = await http.put(
-        Uri.parse('http://localhost:5000/api/notifications/$id/read'),
+        Uri.parse('${Env.apiUrl}/notifications/$id/read'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -125,7 +126,7 @@ class NotificationNotifier extends Notifier<List<NotificationModel>> {
       if (token == null) return;
 
       final response = await http.put(
-        Uri.parse('http://localhost:5000/api/notifications/read-all'),
+        Uri.parse('${Env.apiUrl}/notifications/read-all'),
         headers: {'Authorization': 'Bearer $token'},
       );
 

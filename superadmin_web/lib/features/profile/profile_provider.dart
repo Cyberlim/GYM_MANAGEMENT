@@ -1,3 +1,4 @@
+import 'package:superadmin_web/core/config/env.dart';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -76,7 +77,7 @@ class ProfileNotifier extends Notifier<UserProfile> {
       if (token == null) return;
 
       final response = await http.get(
-        Uri.parse('http://localhost:5000/api/auth/me'),
+        Uri.parse('${Env.apiUrl}/auth/me'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -105,7 +106,7 @@ class ProfileNotifier extends Notifier<UserProfile> {
       if (token == null) return false;
 
       final response = await http.put(
-        Uri.parse('http://localhost:5000/api/auth/profile'),
+        Uri.parse('${Env.apiUrl}/auth/profile'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -139,7 +140,7 @@ class ProfileNotifier extends Notifier<UserProfile> {
       if (token == null) return false;
 
       final response = await http.put(
-        Uri.parse('http://localhost:5000/api/superadmin/settings'),
+        Uri.parse('${Env.apiUrl}/superadmin/settings'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -173,7 +174,7 @@ class ProfileNotifier extends Notifier<UserProfile> {
       if (token == null) return false;
 
       final response = await http.put(
-        Uri.parse('http://localhost:5000/api/auth/password'),
+        Uri.parse('${Env.apiUrl}/auth/password'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -198,7 +199,7 @@ class ProfileNotifier extends Notifier<UserProfile> {
       if (token == null) return null;
 
       final response = await http.post(
-        Uri.parse('http://localhost:5000/api/auth/2fa/setup'),
+        Uri.parse('${Env.apiUrl}/auth/2fa/setup'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -223,7 +224,7 @@ class ProfileNotifier extends Notifier<UserProfile> {
       if (token == null) return false;
 
       final response = await http.post(
-        Uri.parse('http://localhost:5000/api/auth/2fa/verify-setup'),
+        Uri.parse('${Env.apiUrl}/auth/2fa/verify-setup'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -254,7 +255,7 @@ class ProfileNotifier extends Notifier<UserProfile> {
       if (token == null) return [];
 
       final response = await http.get(
-        Uri.parse('http://localhost:5000/api/auth/sessions'),
+        Uri.parse('${Env.apiUrl}/auth/sessions'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -275,7 +276,7 @@ class ProfileNotifier extends Notifier<UserProfile> {
       if (token == null) return false;
 
       final response = await http.delete(
-        Uri.parse('http://localhost:5000/api/auth/sessions/$sessionId'),
+        Uri.parse('${Env.apiUrl}/auth/sessions/$sessionId'),
         headers: {'Authorization': 'Bearer $token'},
       );
 

@@ -1,3 +1,4 @@
+import 'package:gym_owner_web/core/config/env.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,7 +19,7 @@ class EventsNotifier extends Notifier<List<EventModel>> {
       if (token == null) return;
 
       final response = await http.get(
-        Uri.parse('http://localhost:5000/api/events'),
+        Uri.parse('${Env.apiUrl}/events'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -38,7 +39,7 @@ class EventsNotifier extends Notifier<List<EventModel>> {
       if (token == null) return;
 
       final response = await http.post(
-        Uri.parse('http://localhost:5000/api/events'),
+        Uri.parse('${Env.apiUrl}/events'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

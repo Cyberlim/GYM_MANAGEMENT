@@ -1,3 +1,4 @@
+import 'package:superadmin_web/core/config/env.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,7 +35,7 @@ class CalendarNotifier extends Notifier<List<CalendarEvent>> {
       if (token == null) return;
 
       final response = await http.get(
-        Uri.parse('http://localhost:5000/api/events'),
+        Uri.parse('${Env.apiUrl}/events'),
         headers: {'Authorization': 'Bearer $token'},
       );
 
@@ -78,7 +79,7 @@ class CalendarNotifier extends Notifier<List<CalendarEvent>> {
       if (token == null) return;
 
       final response = await http.post(
-        Uri.parse('http://localhost:5000/api/events'),
+        Uri.parse('${Env.apiUrl}/events'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -116,7 +117,7 @@ class CalendarNotifier extends Notifier<List<CalendarEvent>> {
       if (token == null) return;
 
       final response = await http.delete(
-        Uri.parse('http://localhost:5000/api/events/$id'),
+        Uri.parse('${Env.apiUrl}/events/$id'),
         headers: {'Authorization': 'Bearer $token'},
       );
 

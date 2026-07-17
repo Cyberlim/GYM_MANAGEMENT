@@ -1,3 +1,4 @@
+import 'package:gym_owner_web/core/config/env.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -73,7 +74,7 @@ class DashboardNotifier extends AsyncNotifier<DashboardData?> {
     if (token == null) return null;
 
     final response = await http.get(
-      Uri.parse('http://localhost:5000/api/dashboard/stats'),
+      Uri.parse('${Env.apiUrl}/dashboard/stats'),
       headers: {'Authorization': 'Bearer $token'},
     );
 

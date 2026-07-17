@@ -1,3 +1,4 @@
+import 'package:gym_owner_web/core/config/env.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -39,7 +40,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:5000/api/auth/forgot-password'),
+        Uri.parse('${Env.apiUrl}/auth/forgot-password'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': _emailController.text}),
       );
@@ -81,7 +82,7 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:5000/api/auth/reset-password'),
+        Uri.parse('${Env.apiUrl}/auth/reset-password'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'email': _emailController.text,

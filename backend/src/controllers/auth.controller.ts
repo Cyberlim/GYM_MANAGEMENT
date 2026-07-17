@@ -162,7 +162,8 @@ export const updateProfileImage = async (req: AuthRequest, res: Response): Promi
       return;
     }
 
-    const profileImage = `http://localhost:5000/uploads/${req.file.filename}`;
+    const backendUrl = process.env.BACKEND_URL;
+    const profileImage = `${backendUrl}/uploads/${req.file.filename}`;
 
     // Delete previous avatar if it exists locally
     if (user.profileImage && user.profileImage.includes('/uploads/')) {
@@ -202,7 +203,8 @@ export const updateGymLogo = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const logoUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+    const backendUrl = process.env.BACKEND_URL;
+    const logoUrl = `${backendUrl}/uploads/${req.file.filename}`;
 
     let gym = await Gym.findOne({ ownerId: user._id });
     if (gym) {
@@ -237,7 +239,8 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
     let profileImage = '';
 
     if (req.file) {
-      profileImage = `http://localhost:5000/uploads/${req.file.filename}`;
+      const backendUrl = process.env.BACKEND_URL;
+      profileImage = `${backendUrl}/uploads/${req.file.filename}`;
     }
 
     if (!name || !email || !password) {

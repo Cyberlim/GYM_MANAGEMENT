@@ -1,3 +1,4 @@
+import 'package:superadmin_web/core/config/env.dart';
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -9,7 +10,7 @@ final superadminDashboardProvider = FutureProvider<Map<String, dynamic>>((ref) a
   if (token == null) throw Exception('No token');
 
   final response = await http.get(
-    Uri.parse('http://localhost:5000/api/superadmin/dashboard'),
+    Uri.parse('${Env.apiUrl}/superadmin/dashboard'),
     headers: {'Authorization': 'Bearer $token'},
   );
 
@@ -26,7 +27,7 @@ final superadminGymsProvider = FutureProvider<List<dynamic>>((ref) async {
   if (token == null) throw Exception('No token');
 
   final response = await http.get(
-    Uri.parse('http://localhost:5000/api/superadmin/gyms'),
+    Uri.parse('${Env.apiUrl}/superadmin/gyms'),
     headers: {'Authorization': 'Bearer $token'},
   );
 
@@ -43,7 +44,7 @@ final superadminFinanceProvider = FutureProvider<Map<String, dynamic>>((ref) asy
   if (token == null) throw Exception('No token');
 
   final response = await http.get(
-    Uri.parse('http://localhost:5000/api/superadmin/finance'),
+    Uri.parse('${Env.apiUrl}/superadmin/finance'),
     headers: {'Authorization': 'Bearer $token'},
   );
 
@@ -60,7 +61,7 @@ final superadminGymDetailsProvider = FutureProvider.family<Map<String, dynamic>,
   if (token == null) throw Exception('No token');
 
   final response = await http.get(
-    Uri.parse('http://localhost:5000/api/superadmin/gyms/$gymId'),
+    Uri.parse('${Env.apiUrl}/superadmin/gyms/$gymId'),
     headers: {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
@@ -84,7 +85,7 @@ final superadminPersonDetailsProvider = FutureProvider.family<Map<String, dynami
   final id = parts[1];
 
   final response = await http.get(
-    Uri.parse('http://localhost:5000/api/superadmin/person/$role/$id'),
+    Uri.parse('${Env.apiUrl}/superadmin/person/$role/$id'),
     headers: {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
@@ -105,7 +106,7 @@ class SuperadminActions {
     if (token == null) throw Exception('No token');
 
     final response = await http.put(
-      Uri.parse('http://localhost:5000/api/superadmin/gyms/$gymId/suspend'),
+      Uri.parse('${Env.apiUrl}/superadmin/gyms/$gymId/suspend'),
       headers: {'Authorization': 'Bearer $token'},
     );
 
@@ -120,7 +121,7 @@ class SuperadminActions {
     if (token == null) throw Exception('No token');
 
     final response = await http.put(
-      Uri.parse('http://localhost:5000/api/superadmin/gyms/$gymId/reactivate'),
+      Uri.parse('${Env.apiUrl}/superadmin/gyms/$gymId/reactivate'),
       headers: {'Authorization': 'Bearer $token'},
     );
 
@@ -134,7 +135,7 @@ class SuperadminActions {
     final token = prefs.getString('token');
     if (token == null) throw Exception('No token');
 
-    final uri = Uri.parse('http://localhost:5000/api/superadmin/reports').replace(queryParameters: {
+    final uri = Uri.parse('${Env.apiUrl}/superadmin/reports').replace(queryParameters: {
       'type': type,
       'range': range,
     });

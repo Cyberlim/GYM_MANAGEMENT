@@ -1,3 +1,4 @@
+import 'package:gym_owner_web/core/config/env.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -61,7 +62,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
     setState(() => _isLoading = true);
 
     try {
-      var uri = Uri.parse('http://localhost:5000/api/auth/signup');
+      var uri = Uri.parse('${Env.apiUrl}/auth/signup');
       var request = http.MultipartRequest('POST', uri);
 
       request.fields['name'] = _nameController.text;
@@ -114,7 +115,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
         throw Exception('Google Sign-In failed: No ID Token returned');
       }
       
-      final url = Uri.parse('http://localhost:5000/api/auth/google-login');
+      final url = Uri.parse('${Env.apiUrl}/auth/google-login');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
