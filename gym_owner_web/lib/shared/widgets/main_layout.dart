@@ -491,12 +491,12 @@ class _TopBar extends ConsumerWidget {
     final staffState = ref.watch(staffProvider);
     final userState = ref.watch(userProvider);
 
-    String userName = 'Alex';
-    String userRole = 'Gym Owner';
-    String profileImage = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150&h=150';
+    String userName = '';
+    String userRole = '';
+    String profileImage = '';
 
     if (userState.value != null && userState.value!.user.isNotEmpty) {
-      userName = userState.value!.user['name'] ?? 'User';
+      userName = userState.value!.user['name'] ?? '';
       userRole = userState.value!.user['role'] == 'superadmin' ? 'Superadmin' : 'Gym Owner';
       if (userState.value!.user['profileImage'] != null && userState.value!.user['profileImage'].toString().isNotEmpty) {
         profileImage = userState.value!.user['profileImage'];
@@ -528,7 +528,7 @@ class _TopBar extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Good Morning, $userName! 👋',
+                    'Good Morning${userName.isNotEmpty ? ', $userName' : ''}! 👋',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -969,7 +969,9 @@ class _TopBar extends ConsumerWidget {
                           CircleAvatar(
                             radius: 12,
                             backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                            backgroundImage: NetworkImage(profileImage),
+                            backgroundImage: profileImage.isNotEmpty ? NetworkImage(profileImage) : null,
+                            onBackgroundImageError: (_, __) {},
+                            child: profileImage.isEmpty ? Icon(LucideIcons.user, size: 16, color: Theme.of(context).colorScheme.primary) : null,
                           ),
                           if (screenWidth > 500) ...[
                             const SizedBox(width: 8),

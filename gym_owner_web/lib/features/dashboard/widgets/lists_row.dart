@@ -15,39 +15,57 @@ class ListsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 4,
-          child: _buildListCard(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 900;
+        
+        final children = [
+          _buildListCard(
             context: context,
             title: 'Recent Members',
             route: '/members',
             child: _RecentMembersList(members: data.recentMembers),
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          flex: 4,
-          child: _buildListCard(
+          const SizedBox(width: 16),
+          _buildListCard(
             context: context,
             title: 'Recent Payments',
             route: '/payments',
             child: _RecentPaymentsList(payments: data.recentTransactions),
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          flex: 3,
-          child: _buildListCard(
+          const SizedBox(width: 16),
+          _buildListCard(
             context: context,
             title: 'Upcoming Renewals',
             route: '/members',
             child: _UpcomingRenewalsList(renewals: data.upcomingRenewals),
           ),
-        ),
-      ],
+        ];
+
+        if (isMobile) {
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: children.map((c) {
+                if (c is SizedBox) return c;
+                return SizedBox(width: 320, child: c);
+              }).toList(),
+            ),
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: 4, child: children[0]),
+            children[1], // SizedBox
+            Expanded(flex: 4, child: children[2]),
+            children[3], // SizedBox
+            Expanded(flex: 3, child: children[4]),
+          ],
+        );
+      }
     );
   }
 

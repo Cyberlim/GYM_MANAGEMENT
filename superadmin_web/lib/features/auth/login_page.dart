@@ -206,14 +206,17 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Row(
         children: [
           // Left Side - Branding with Image Carousel
-          Expanded(
-            child: Stack(
-              fit: StackFit.expand,
+          if (isDesktop)
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
               children: [
                 // Background Carousel
                 AnimatedSwitcher(

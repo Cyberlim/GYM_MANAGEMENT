@@ -42,6 +42,8 @@ class _LandingPageState extends ConsumerState<LandingPage> {
   @override
   Widget build(BuildContext context) {
     final appName = ref.watch(appNameProvider);
+    final size = MediaQuery.of(context).size;
+    final isMobile = size.width < 600;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -77,7 +79,10 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                 children: [
                   // Top Navigation Bar
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 24),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 16 : 48, 
+                      vertical: 24
+                    ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -91,11 +96,12 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                               ),
                               child: const Icon(LucideIcons.dumbbell, color: Color(0xFF6366F1), size: 32),
                             ),
-                            const SizedBox(width: 16),
-                            Text(
-                              appName,
-                              style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                            ),
+                            if (!isMobile) const SizedBox(width: 16),
+                            if (!isMobile)
+                              Text(
+                                appName,
+                                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                              ),
                           ],
                         ),
                         Row(
@@ -104,17 +110,26 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                               onPressed: () => context.go('/login'),
                               child: const Text('Login', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
                             ),
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 8),
                             ElevatedButton(
                               onPressed: () => context.go('/signup'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF6366F1),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: isMobile ? 16 : 24, 
+                                  vertical: isMobile ? 12 : 16
+                                ),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                                 elevation: 0,
                               ),
-                              child: const Text('Get Started', style: TextStyle(fontWeight: FontWeight.bold)),
+                              child: Text(
+                                'Get Started', 
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: isMobile ? 12 : 14,
+                                )
+                              ),
                             ),
                           ],
                         ),
@@ -125,17 +140,17 @@ class _LandingPageState extends ConsumerState<LandingPage> {
                   // Hero Section
                   Container(
                     padding: EdgeInsets.symmetric(
-                      vertical: MediaQuery.of(context).size.height * 0.2,
+                      vertical: size.height * (isMobile ? 0.1 : 0.2),
                       horizontal: 24
                     ),
                     child: Column(
                       children: [
-                        const Text(
+                        Text(
                           'The Ultimate Operating System\nfor Modern Gyms',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 56,
+                            fontSize: isMobile ? 36 : 56,
                             fontWeight: FontWeight.bold,
                             height: 1.1,
                             letterSpacing: -1,

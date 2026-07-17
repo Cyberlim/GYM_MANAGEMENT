@@ -40,54 +40,68 @@ class ChartsRow extends ConsumerWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        final isMobile = constraints.maxWidth < 900;
+        
+        final children = [
             // Revenue Overview
-            Expanded(
-              flex: 5,
-              child: _buildChartCard(
-                context: context,
-                title: 'Revenue Overview',
-                actionLabel: 'Last 6 Months',
-                filterOptions: ['Last 6 Months'],
-                onFilterSelected: (value) {},
-                child: _RevenueLineChart(data: data),
-                valueSubtitle: '₹${data.monthlyRevenue.toStringAsFixed(0)}',
-                trendSubtitle: 'This Month',
-                trendColor: Colors.grey,
-              ),
+            _buildChartCard(
+              context: context,
+              title: 'Revenue Overview',
+              actionLabel: 'Last 6 Months',
+              filterOptions: ['Last 6 Months'],
+              onFilterSelected: (value) {},
+              child: _RevenueLineChart(data: data),
+              valueSubtitle: '₹${data.monthlyRevenue.toStringAsFixed(0)}',
+              trendSubtitle: 'This Month',
+              trendColor: Colors.grey,
             ),
             const SizedBox(width: 16),
             // Membership Status
-            Expanded(
-              flex: 4,
-              child: _buildChartCard(
-                context: context,
-                title: 'Membership Status',
-                actionLabel: membershipFilter,
-                filterOptions: ['This Month', 'Last Month', 'All Time'],
-                onFilterSelected: (value) => ref.read(membershipFilterProvider.notifier).setFilter(value),
-                child: _MembershipDonutChart(data: data),
-              ),
+            _buildChartCard(
+              context: context,
+              title: 'Membership Status',
+              actionLabel: membershipFilter,
+              filterOptions: ['This Month', 'Last Month', 'All Time'],
+              onFilterSelected: (value) => ref.read(membershipFilterProvider.notifier).setFilter(value),
+              child: _MembershipDonutChart(data: data),
             ),
             const SizedBox(width: 16),
             // Today's Attendance
-            Expanded(
-              flex: 3,
-              child: _buildChartCard(
-                context: context,
-                title: 'Attendance',
-                actionLabel: attendanceFilter,
-                filterOptions: ['Today', 'Yesterday', 'This Week'],
-                onFilterSelected: (value) => ref.read(attendanceFilterProvider.notifier).setFilter(value),
-                secondaryActionLabel: attendanceRoleFilter,
-                secondaryFilterOptions: ['Member', 'Staff', 'Trainer'],
-                onSecondaryFilterSelected: (value) => ref.read(attendanceRoleFilterProvider.notifier).setFilter(value),
-                isActionIcon: true,
-                child: _AttendanceCircularChart(filter: attendanceFilter, roleFilter: attendanceRoleFilter, data: data),
-              ),
+            _buildChartCard(
+              context: context,
+              title: 'Attendance',
+              actionLabel: attendanceFilter,
+              filterOptions: ['Today', 'Yesterday', 'This Week'],
+              onFilterSelected: (value) => ref.read(attendanceFilterProvider.notifier).setFilter(value),
+              secondaryActionLabel: attendanceRoleFilter,
+              secondaryFilterOptions: ['Member', 'Staff', 'Trainer'],
+              onSecondaryFilterSelected: (value) => ref.read(attendanceRoleFilterProvider.notifier).setFilter(value),
+              isActionIcon: true,
+              child: _AttendanceCircularChart(filter: attendanceFilter, roleFilter: attendanceRoleFilter, data: data),
             ),
+        ];
+
+        if (isMobile) {
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: children.map((c) {
+                if (c is SizedBox) return c;
+                return SizedBox(width: 320, child: c); // Fixed width for mobile cards
+              }).toList(),
+            ),
+          );
+        }
+
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: 5, child: children[0]),
+            children[1], // SizedBox
+            Expanded(flex: 4, child: children[2]),
+            children[3], // SizedBox
+            Expanded(flex: 3, child: children[4]),
           ],
         );
       },

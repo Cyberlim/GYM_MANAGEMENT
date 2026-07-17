@@ -281,14 +281,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final appName = ref.watch(appNameProvider);
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Row(
         children: [
           // Left Side - Branding (Visible only on larger screens)
-          Expanded(
-            flex: 5,
+          if (isDesktop)
+            Expanded(
+              flex: 5,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -405,17 +407,43 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           Expanded(
             flex: 6,
             child: Container(
-              color: Colors.white,
+              decoration: BoxDecoration(
+                color: isDesktop ? Colors.white : null,
+                image: !isDesktop 
+                    ? const DecorationImage(
+                        image: NetworkImage('https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop'),
+                        fit: BoxFit.cover,
+                        colorFilter: ColorFilter.mode(Colors.black54, BlendMode.darken),
+                      )
+                    : null,
+              ),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 400),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
+                  child: Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: !isDesktop 
+                        ? BoxDecoration(
+                            color: Colors.white.withOpacity(0.85),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              )
+                            ],
+                          )
+                        : null,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: isDesktop ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                      Text(
                         'Welcome back',
-                        style: TextStyle(
+                        textAlign: isDesktop ? TextAlign.start : TextAlign.center,
+                        style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
@@ -425,6 +453,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       const SizedBox(height: 8),
                       Text(
                         'Please enter your details to sign in.',
+                        textAlign: isDesktop ? TextAlign.start : TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey.shade600,
@@ -433,14 +462,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       const SizedBox(height: 48),
                       
                       // Email Field
-                      Text(
-                        _show2FA 
-                          ? 'Enter 2FA Code'
-                          : 'Email',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.black87,
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          _show2FA 
+                            ? 'Enter 2FA Code'
+                            : 'Email',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -500,12 +532,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       
                       if (!_show2FA) ...[
                         // Password Field
-                        const Text(
-                          'Password',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Password',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -668,6 +703,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ),
             ),
           ),
+        ),
         ],
       ),
     );

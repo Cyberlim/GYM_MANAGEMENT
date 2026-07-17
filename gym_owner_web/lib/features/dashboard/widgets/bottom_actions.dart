@@ -8,52 +8,60 @@ class BottomActionsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        _buildActionButton(
-          context: context,
-          icon: LucideIcons.userPlus,
-          label: 'Add Member',
-          color: Colors.purple,
-          route: '/members?action=add',
-        ),
-        _buildActionButton(
-          context: context,
-          icon: LucideIcons.checkSquare,
-          label: 'Mark Attendance',
-          color: Colors.green,
-          route: '/attendance',
-        ),
-        _buildActionButton(
-          context: context,
-          icon: LucideIcons.banknote,
-          label: 'Collect Payment',
-          color: Colors.orange,
-          route: '/payments',
-        ),
-        _buildActionButton(
-          context: context,
-          icon: LucideIcons.userPlus,
-          label: 'Add Trainer',
-          color: Colors.blue,
-          route: '/trainers?action=add',
-        ),
-        _buildActionButton(
-          context: context,
-          icon: LucideIcons.calendarPlus,
-          label: 'Create Plan',
-          color: Colors.purple,
-          route: '/plans?action=add',
-        ),
-        _buildActionButton(
-          context: context,
-          icon: LucideIcons.bellRing,
-          label: 'Send Notification',
-          color: Colors.orange,
-          route: '/notifications',
-        ),
-      ],
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          _buildActionButton(
+            context: context,
+            icon: LucideIcons.userPlus,
+            label: 'Add Member',
+            color: Colors.purple,
+            route: '/members?action=add',
+          ),
+          const SizedBox(width: 16),
+          _buildActionButton(
+            context: context,
+            icon: LucideIcons.checkSquare,
+            label: 'Mark Attendance',
+            color: Colors.green,
+            route: '/attendance',
+          ),
+          const SizedBox(width: 16),
+          _buildActionButton(
+            context: context,
+            icon: LucideIcons.banknote,
+            label: 'Collect Payment',
+            color: Colors.orange,
+            route: '/payments',
+          ),
+          const SizedBox(width: 16),
+          _buildActionButton(
+            context: context,
+            icon: LucideIcons.userPlus,
+            label: 'Add Trainer',
+            color: Colors.blue,
+            route: '/trainers?action=add',
+          ),
+          const SizedBox(width: 16),
+          _buildActionButton(
+            context: context,
+            icon: LucideIcons.calendarPlus,
+            label: 'Create Plan',
+            color: Colors.purple,
+            route: '/plans?action=add',
+          ),
+          const SizedBox(width: 16),
+          _buildActionButton(
+            context: context,
+            icon: LucideIcons.bellRing,
+            label: 'Send Notification',
+            color: Colors.orange,
+            route: '/notifications',
+          ),
+        ],
+      ),
     );
   }
 

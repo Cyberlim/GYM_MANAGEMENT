@@ -9,11 +9,25 @@ import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
-class MembersPage extends ConsumerWidget {
+class MembersPage extends ConsumerStatefulWidget {
   const MembersPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MembersPage> createState() => _MembersPageState();
+}
+
+class _MembersPageState extends ConsumerState<MembersPage> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ref = this.ref;
     final membersAsync = ref.watch(filteredMembersProvider);
     final isListView = ref.watch(isMemberListViewProvider);
     final highlightId = GoRouterState.of(context).uri.queryParameters['highlightId'];
@@ -51,22 +65,36 @@ class MembersPage extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: Theme.of(context).dividerColor),
                         ),
-                        child: Column(
-                          children: [
-                            _buildTableHeaders(context),
-                            Divider(color: Theme.of(context).dividerColor, height: 1),
-                            Expanded(
-                              child: ListView.separated(
-                                padding: EdgeInsets.zero,
-                                itemCount: members.length,
-                                separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor, height: 1),
-                                itemBuilder: (context, index) {
-                                  final member = members[index];
-                                  return _MemberRow(member: member, isHighlighted: member.id == highlightId);
-                                },
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final tableWidth = constraints.maxWidth > 800 ? constraints.maxWidth : 800.0;
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints.tightFor(
+                                  width: tableWidth,
+                                  height: constraints.maxHeight,
+                                ),
+                                child: Column(
+                                  children: [
+                                    _buildTableHeaders(context),
+                                    Divider(color: Theme.of(context).dividerColor, height: 1),
+                                    Expanded(
+                                      child: ListView.separated(
+                                        padding: EdgeInsets.zero,
+                                        itemCount: members.length,
+                                        separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor, height: 1),
+                                        itemBuilder: (context, index) {
+                                          final member = members[index];
+                                          return _MemberRow(member: member, isHighlighted: member.id == highlightId);
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            );
+                          }
                         ),
                       )
                     : GridView.builder(
@@ -91,37 +119,76 @@ class MembersPage extends ConsumerWidget {
 
   Widget _buildHeader(BuildContext context, WidgetRef ref, bool isListView) {
     final statusFilter = ref.watch(filterStatusProvider);
+    final isMobile = MediaQuery.of(context).size.width < 900;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final searchField = TextField(
+      controller: _searchController,
+      onChanged: (value) => ref.read(searchQueryProvider.notifier).updateQuery(value),
+      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      decoration: InputDecoration(
+        hintText: 'Search members...',
+        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+        prefixIcon: Icon(LucideIcons.search, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Theme.of(context).dividerColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Theme.of(context).dividerColor),
+        ),
+      ),
+    );
+
+    return Wrap(
+      spacing: 16,
+      runSpacing: 16,
+      alignment: WrapAlignment.spaceBetween,
       children: [
-        Row(
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            SizedBox(
-              width: 300,
-              child: TextField(
-                onChanged: (value) => ref.read(searchQueryProvider.notifier).updateQuery(value),
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                decoration: InputDecoration(
-                  hintText: 'Search members by name or email...',
-                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                  prefixIcon: Icon(LucideIcons.search, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                  ),
+            if (isMobile)
+              Container(
+                height: 48,
+                width: 48,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Theme.of(context).dividerColor),
                 ),
+                child: IconButton(
+                  icon: Icon(LucideIcons.search, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        backgroundColor: Theme.of(context).colorScheme.surface,
+                        title: Text('Search Members', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                        content: SizedBox(width: 300, child: searchField),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Close'),
+                          )
+                        ],
+                      )
+                    );
+                  },
+                ),
+              )
+            else
+              SizedBox(
+                width: 300,
+                child: searchField,
               ),
-            ),
-            const SizedBox(width: 16),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16),
+              height: 48,
               decoration: BoxDecoration(
                 color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(12),
@@ -150,7 +217,10 @@ class MembersPage extends ConsumerWidget {
             ),
           ],
         ),
-        Row(
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Container(
               height: 48,
@@ -175,7 +245,6 @@ class MembersPage extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 16),
             ElevatedButton.icon(
               onPressed: () => showAddMemberDialog(context, ref),
               icon: const Icon(LucideIcons.plus, size: 18),
@@ -1037,11 +1106,12 @@ class _MemberCard extends ConsumerWidget {
                         style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                       ),
                       const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        alignment: WrapAlignment.center,
                         children: [
                           _buildPlanBadge(context, member.membershipPlan),
-                          const SizedBox(width: 8),
                           _buildStatusBadge(context, member.status),
                         ],
                       ),
