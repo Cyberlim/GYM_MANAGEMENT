@@ -593,6 +593,9 @@ class _TopBar extends ConsumerWidget {
                           return filtered;
                         },
                         onSelected: (String selection) {
+                          if (isMobile && Navigator.canPop(context)) {
+                            Navigator.pop(context);
+                          }
                           if (selection == 'No results found') return;
                           
                           final member = membersState.value?.cast<Member?>().firstWhere((m) => m?.name == selection, orElse: () => null);
@@ -672,6 +675,33 @@ class _TopBar extends ConsumerWidget {
                     showGreeting ? searchField : Expanded(child: searchField),
                   if (!isMobile)
                     const SizedBox(width: 16),
+                  
+                  if (isMobile)
+                    _buildIconWithBadge(
+                      context,
+                      LucideIcons.search,
+                      isHoverZoomed: false,
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => Align(
+                            alignment: Alignment.topCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: kToolbarHeight),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: SizedBox(
+                                  width: MediaQuery.of(context).size.width - 32,
+                                  child: searchField,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  if (isMobile)
+                    const SizedBox(width: 12),
                 
                 // Action Icons
                 if (screenWidth > 400) ...[
