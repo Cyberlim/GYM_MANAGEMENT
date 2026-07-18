@@ -5,6 +5,7 @@ import 'package:gym_owner_web/features/staff/providers/staff_provider.dart';
 import 'package:gym_owner_web/data/models/gym_owner_models.dart';
 
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void showStaffDialog(BuildContext context, WidgetRef ref, {Staff? staffToEdit}) {
   final nameController = TextEditingController(text: staffToEdit?.name ?? '');
@@ -297,6 +298,7 @@ class StaffPage extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(context, ref, isListView),
           const SizedBox(height: 24),
@@ -318,21 +320,36 @@ class StaffPage extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: Theme.of(context).dividerColor),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _buildTableHeader(context),
-                            Divider(color: Theme.of(context).dividerColor, height: 1),
-                            Expanded(
-                              child: ListView.separated(
-                                itemCount: staffMembers.length,
-                                separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor, height: 1),
-                                itemBuilder: (context, index) {
-                                  return _StaffTableRow(staff: staffMembers[index]);
-                                },
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final tableWidth = constraints.maxWidth > 600 ? constraints.maxWidth : 600.0;
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints.tightFor(
+                                  width: tableWidth,
+                                  height: constraints.maxHeight,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    _buildTableHeader(context),
+                                    Divider(color: Theme.of(context).dividerColor, height: 1),
+                                    Expanded(
+                                      child: ListView.separated(
+                                        padding: EdgeInsets.zero,
+                                        itemCount: staffMembers.length,
+                                        separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor, height: 1),
+                                        itemBuilder: (context, index) {
+                                          return _StaffTableRow(staff: staffMembers[index]);
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            );
+                          }
                         ),
                       )
                     : GridView.builder(
@@ -340,7 +357,7 @@ class StaffPage extends ConsumerWidget {
                           maxCrossAxisExtent: 350,
                           crossAxisSpacing: 24,
                           mainAxisSpacing: 24,
-                          childAspectRatio: 0.75,
+                          mainAxisExtent: 340,
                         ),
                         itemCount: staffMembers.length,
                         itemBuilder: (context, index) {
@@ -355,8 +372,11 @@ class StaffPage extends ConsumerWidget {
   }
 
   Widget _buildHeader(BuildContext context, WidgetRef ref, bool isListView) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Wrap(
+      spacing: 16,
+      runSpacing: 16,
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         SizedBox(
           width: 300,
@@ -381,7 +401,10 @@ class StaffPage extends ConsumerWidget {
             ),
           ),
         ),
-        Row(
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Container(
               height: 48,
@@ -429,10 +452,10 @@ class StaffPage extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
         children: [
-          Expanded(flex: 3, child: Text('NAME', style: _headerStyle(context))),
+          Expanded(flex: 2, child: Text('NAME', style: _headerStyle(context))),
           Expanded(flex: 2, child: Text('ROLE', style: _headerStyle(context))),
           Expanded(flex: 2, child: Text('SHIFT', style: _headerStyle(context))),
-          Expanded(flex: 2, child: Text('CONTACT', style: _headerStyle(context))),
+          Expanded(flex: 3, child: Text('CONTACT', style: _headerStyle(context))),
           const SizedBox(width: 48), // Space for actions
         ],
       ),
@@ -511,21 +534,76 @@ class _StaffCard extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         insetPadding: const EdgeInsets.all(16),
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            color: Colors.transparent,
-            child: Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: InteractiveViewer(
-                  minScale: 1.0,
-                  maxScale: 5.0,
-                  child: Image.network(staff.idProofUrl!, fit: BoxFit.contain),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                color: Colors.transparent,
+                child: Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: InteractiveViewer(
+                      minScale: 1.0,
+                      maxScale: 5.0,
+                      child: Image.network(
+                        staff.idProofUrl!, 
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                           return Container(
+                             width: 300,
+                             height: 300,
+                             color: Theme.of(context).colorScheme.surface,
+                             padding: const EdgeInsets.all(24),
+                             child: Column(
+                               mainAxisAlignment: MainAxisAlignment.center,
+                               children: [
+                                 Icon(LucideIcons.fileText, size: 64, color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
+                                 const SizedBox(height: 16),
+                                 Text('Document Preview Not Available', style: TextStyle(color: Theme.of(context).colorScheme.onSurface), textAlign: TextAlign.center),
+                                 const SizedBox(height: 8),
+                                 Text('Please use the download button to view this file.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12), textAlign: TextAlign.center),
+                               ]
+                             )
+                           );
+                        }
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.black54,
+                    child: IconButton(
+                      icon: const Icon(LucideIcons.download, color: Colors.white, size: 20),
+                      onPressed: () async {
+                        final url = Uri.parse(staff.idProofUrl!);
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      tooltip: 'Download',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  CircleAvatar(
+                    backgroundColor: Colors.black54,
+                    child: IconButton(
+                      icon: const Icon(LucideIcons.x, color: Colors.white, size: 20),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -607,12 +685,13 @@ class _StaffCard extends ConsumerWidget {
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 6),
                     if (staff.phone.isNotEmpty)
-                      Text(staff.phone, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8), fontSize: 13)),
+                      Text(staff.phone, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8), fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                     if (staff.email.isNotEmpty)
-                      Text(staff.email, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12)),
+                      Text(staff.email, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 12),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -628,6 +707,7 @@ class _StaffCard extends ConsumerWidget {
                           color: roleColor,
                           fontWeight: FontWeight.bold,
                         ),
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -658,6 +738,7 @@ class _StaffCard extends ConsumerWidget {
                             fontWeight: FontWeight.bold,
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
+                          maxLines: 1, overflow: TextOverflow.ellipsis,
                         ),
                         if (staff.idProofUrl != null) ...[
                           const SizedBox(height: 4),
@@ -767,21 +848,76 @@ class _StaffTableRow extends ConsumerWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         insetPadding: const EdgeInsets.all(16),
-        child: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Container(
-            color: Colors.transparent,
-            child: Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: InteractiveViewer(
-                  minScale: 1.0,
-                  maxScale: 5.0,
-                  child: Image.network(staff.idProofUrl!, fit: BoxFit.contain),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                color: Colors.transparent,
+                child: Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: InteractiveViewer(
+                      minScale: 1.0,
+                      maxScale: 5.0,
+                      child: Image.network(
+                        staff.idProofUrl!, 
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                           return Container(
+                             width: 300,
+                             height: 300,
+                             color: Theme.of(context).colorScheme.surface,
+                             padding: const EdgeInsets.all(24),
+                             child: Column(
+                               mainAxisAlignment: MainAxisAlignment.center,
+                               children: [
+                                 Icon(LucideIcons.fileText, size: 64, color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
+                                 const SizedBox(height: 16),
+                                 Text('Document Preview Not Available', style: TextStyle(color: Theme.of(context).colorScheme.onSurface), textAlign: TextAlign.center),
+                                 const SizedBox(height: 8),
+                                 Text('Please use the download button to view this file.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12), textAlign: TextAlign.center),
+                               ]
+                             )
+                           );
+                        }
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.black54,
+                    child: IconButton(
+                      icon: const Icon(LucideIcons.download, color: Colors.white, size: 20),
+                      onPressed: () async {
+                        final url = Uri.parse(staff.idProofUrl!);
+                        if (await canLaunchUrl(url)) {
+                          await launchUrl(url, mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      tooltip: 'Download',
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  CircleAvatar(
+                    backgroundColor: Colors.black54,
+                    child: IconButton(
+                      icon: const Icon(LucideIcons.x, color: Colors.white, size: 20),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -795,7 +931,7 @@ class _StaffTableRow extends ConsumerWidget {
         children: [
           // User Info
           Expanded(
-            flex: 3,
+            flex: 2,
             child: Row(
               children: [
                 GestureDetector(
@@ -819,6 +955,7 @@ class _StaffTableRow extends ConsumerWidget {
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
+                    maxLines: 1, overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
@@ -844,6 +981,7 @@ class _StaffTableRow extends ConsumerWidget {
                     color: _getRoleColor(staff.role),
                     fontWeight: FontWeight.bold,
                   ),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
@@ -855,18 +993,19 @@ class _StaffTableRow extends ConsumerWidget {
             child: Text(
               staff.shift,
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+              maxLines: 1, overflow: TextOverflow.ellipsis,
             ),
           ),
 
           // Contact
           Expanded(
-            flex: 2,
+            flex: 3,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                if (staff.phone.isNotEmpty) Text(staff.phone, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13)),
-                if (staff.email.isNotEmpty) Text(staff.email, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12)),
+                if (staff.phone.isNotEmpty) Text(staff.phone, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                if (staff.email.isNotEmpty) Text(staff.email, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
                 if (staff.idProofUrl != null) ...[
                   const SizedBox(height: 4),
                   GestureDetector(

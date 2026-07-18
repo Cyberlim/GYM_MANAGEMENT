@@ -56,79 +56,84 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
         children: [
           Padding(
             padding: const EdgeInsets.all(24.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Attendance',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Track daily check-ins for your gym',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                      ),
-                    ),
-                  ],
+                Text(
+                  'Attendance',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
                 ),
-                _DateSelector(),
+                const SizedBox(height: 4),
+                Text(
+                  'Track daily check-ins for your gym',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
               ],
             ),
           ),
           
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Row(
+            child: Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 16,
+              runSpacing: 16,
               children: [
-                SizedBox(
-                  width: 300,
-                  child: TextField(
-                    onChanged: (val) {
-                      setState(() {
-                        searchQuery = val;
-                      });
-                    },
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                    decoration: InputDecoration(
-                      hintText: 'Search by name...',
-                      hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                      prefixIcon: Icon(LucideIcons.search, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 300,
+                      child: TextField(
+                        onChanged: (val) {
+                          setState(() {
+                            searchQuery = val;
+                          });
+                        },
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                        decoration: InputDecoration(
+                          hintText: 'Search by name...',
+                          hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                          prefixIcon: Icon(LucideIcons.search, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                        ),
                       ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'Members', label: Text('Members')),
-                    ButtonSegment(value: 'Staff', label: Text('Staff')),
-                    ButtonSegment(value: 'Trainers', label: Text('Trainers')),
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'Members', label: Text('Members')),
+                        ButtonSegment(value: 'Staff', label: Text('Staff')),
+                        ButtonSegment(value: 'Trainers', label: Text('Trainers')),
+                      ],
+                      selected: {selectedTab},
+                      onSelectionChanged: (val) {
+                        setState(() {
+                          selectedTab = val.first;
+                        });
+                      },
+                    ),
                   ],
-                  selected: {selectedTab},
-                  onSelectionChanged: (val) {
-                    setState(() {
-                      selectedTab = val.first;
-                    });
-                  },
                 ),
+                _DateSelector(),
               ],
             ),
           ),
@@ -141,38 +146,52 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
               ),
-              child: selectedTab == 'Members'
-                  ? (filteredMembers.isEmpty
-                      ? const Center(child: Text('No members found.'))
-                      : ListView.separated(
-                          padding: const EdgeInsets.all(16),
-                          itemCount: filteredMembers.length,
-                          separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                          itemBuilder: (context, index) {
-                            return _AttendanceRow(member: filteredMembers[index], date: selectedDate);
-                          },
-                        ))
-                  : selectedTab == 'Staff'
-                      ? (filteredStaff.isEmpty
-                          ? const Center(child: Text('No staff found.'))
-                          : ListView.separated(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: filteredStaff.length,
-                              separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                              itemBuilder: (context, index) {
-                                return _StaffAttendanceRow(staff: filteredStaff[index], date: selectedDate);
-                              },
-                            ))
-                      : (filteredTrainers.isEmpty
-                          ? const Center(child: Text('No trainers found.'))
-                          : ListView.separated(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: filteredTrainers.length,
-                              separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                              itemBuilder: (context, index) {
-                                return _TrainerAttendanceRow(trainer: filteredTrainers[index], date: selectedDate);
-                              },
-                            )),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final listWidth = constraints.maxWidth > 600 ? constraints.maxWidth : 600.0;
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints.tightFor(
+                        width: listWidth,
+                        height: constraints.maxHeight,
+                      ),
+                      child: selectedTab == 'Members'
+                          ? (filteredMembers.isEmpty
+                              ? const Center(child: Text('No members found.'))
+                              : ListView.separated(
+                                  padding: const EdgeInsets.all(16),
+                                  itemCount: filteredMembers.length,
+                                  separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                                  itemBuilder: (context, index) {
+                                    return _AttendanceRow(member: filteredMembers[index], date: selectedDate);
+                                  },
+                                ))
+                          : selectedTab == 'Staff'
+                              ? (filteredStaff.isEmpty
+                                  ? const Center(child: Text('No staff found.'))
+                                  : ListView.separated(
+                                      padding: const EdgeInsets.all(16),
+                                      itemCount: filteredStaff.length,
+                                      separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                                      itemBuilder: (context, index) {
+                                        return _StaffAttendanceRow(staff: filteredStaff[index], date: selectedDate);
+                                      },
+                                    ))
+                              : (filteredTrainers.isEmpty
+                                  ? const Center(child: Text('No trainers found.'))
+                                  : ListView.separated(
+                                      padding: const EdgeInsets.all(16),
+                                      itemCount: filteredTrainers.length,
+                                      separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                                      itemBuilder: (context, index) {
+                                        return _TrainerAttendanceRow(trainer: filteredTrainers[index], date: selectedDate);
+                                      },
+                                    )),
+                    ),
+                  );
+                }
+              ),
             ),
           ),
         ],
@@ -298,11 +317,12 @@ class _AttendanceRow extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
                 Text(
                   member.email,
                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -325,6 +345,7 @@ class _AttendanceRow extends ConsumerWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
@@ -414,11 +435,12 @@ class _StaffAttendanceRow extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(staff.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(staff.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
                 Text(
                   staff.email,
                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -441,6 +463,7 @@ class _StaffAttendanceRow extends ConsumerWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
@@ -530,11 +553,12 @@ class _TrainerAttendanceRow extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(trainer.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(trainer.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
                 Text(
                   trainer.email,
                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -557,6 +581,7 @@ class _TrainerAttendanceRow extends ConsumerWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),

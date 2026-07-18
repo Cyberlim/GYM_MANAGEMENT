@@ -207,12 +207,12 @@ class _PaymentsPageState extends ConsumerState<PaymentsPage> {
               ],
             ),
             const SizedBox(height: 24),
-            Row(
+            Wrap(
+              spacing: 16,
+              runSpacing: 16,
               children: [
-                Expanded(child: _StatCard(title: 'Total Revenue', amount: totalRevenue, icon: LucideIcons.dollarSign, color: Colors.green)),
-                const SizedBox(width: 16),
-                Expanded(child: _StatCard(title: 'Pending Payments', amount: pendingRevenue, icon: LucideIcons.clock, color: Colors.orange)),
-                const Spacer(flex: 2),
+                SizedBox(width: 250, child: _StatCard(title: 'Total Revenue', amount: totalRevenue, icon: LucideIcons.dollarSign, color: Colors.green)),
+                SizedBox(width: 250, child: _StatCard(title: 'Pending Payments', amount: pendingRevenue, icon: LucideIcons.clock, color: Colors.orange)),
               ],
             ),
             const SizedBox(height: 32),
@@ -231,62 +231,75 @@ class _PaymentsPageState extends ConsumerState<PaymentsPage> {
               ],
             ),
             const SizedBox(height: 16),
-            Container(
-              decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 24, right: 24, top: 20, bottom: 8),
-                      child: Row(
-                        children: [
-                          const SizedBox(width: 56), // Avatar placeholder
-                          Expanded(
-                            flex: 2,
-                            child: Text('Member', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text('Plan', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text('Date', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text('Method', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                          ),
-                          Expanded(
-                            flex: 1,
-                            child: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                          ),
-                          SizedBox(
-                            width: 100,
-                            child: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                          ),
-                        ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final listWidth = constraints.maxWidth > 800 ? constraints.maxWidth : 800.0;
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints.tightFor(
+                      width: listWidth,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                        ),
+                        child: Column(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(left: 24, right: 24, top: 20, bottom: 8),
+                              child: Row(
+                                children: [
+                                  const SizedBox(width: 56), // Avatar placeholder
+                                  Expanded(
+                                    flex: 2,
+                                    child: Text('Member', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Text('Plan', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Text('Date', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Text('Method', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Divider(color: Theme.of(context).dividerColor.withOpacity(0.2), height: 1),
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              itemCount: sortedPayments.length,
+                              separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                              itemBuilder: (context, index) {
+                                final payment = sortedPayments[index];
+                                final isHighlighted = payment.id == highlightId;
+                                return _TransactionRow(payment: payment, isHighlighted: isHighlighted);
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    Divider(color: Theme.of(context).dividerColor.withOpacity(0.2), height: 1),
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      itemCount: sortedPayments.length,
-                      separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                      itemBuilder: (context, index) {
-                        final payment = sortedPayments[index];
-                        final isHighlighted = payment.id == highlightId;
-                        return _TransactionRow(payment: payment, isHighlighted: isHighlighted);
-                      },
-                    ),
-                  ],
-                ),
-              ),
+                  ),
+                );
+              }
+            ),
             ],
           ),
         );
@@ -613,11 +626,12 @@ class _TransactionRow extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
                 Text(
                   member.email,
                   style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -639,6 +653,7 @@ class _TransactionRow extends ConsumerWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
@@ -648,6 +663,7 @@ class _TransactionRow extends ConsumerWidget {
             child: Text(
               DateFormat('MMM dd, yyyy').format(payment.date),
               style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+              maxLines: 1, overflow: TextOverflow.ellipsis,
             ),
           ),
           Expanded(
@@ -668,12 +684,15 @@ class _TransactionRow extends ConsumerWidget {
                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
                   ),
                   const SizedBox(width: 6),
-                  Text(
-                    payment.paymentMethod,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
+                  Flexible(
+                    child: Text(
+                      payment.paymentMethod,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -685,6 +704,7 @@ class _TransactionRow extends ConsumerWidget {
             child: Text(
               '₹${payment.amount.toStringAsFixed(2)}',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              maxLines: 1, overflow: TextOverflow.ellipsis,
             ),
           ),
           Expanded(
@@ -692,21 +712,27 @@ class _TransactionRow extends ConsumerWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(statusIcon, size: 14, color: statusColor),
-                      const SizedBox(width: 6),
-                      Text(
-                        payment.status,
-                        style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
-                      ),
-                    ],
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(statusIcon, size: 14, color: statusColor),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            payment.status,
+                            style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
+                            maxLines: 1, overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 if (DateTime.now().difference(payment.date).inDays <= (payment.status == 'Pending' ? 10 : 2)) ...[

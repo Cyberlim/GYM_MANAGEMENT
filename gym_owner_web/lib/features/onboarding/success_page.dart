@@ -11,7 +11,7 @@ class SuccessPage extends StatelessWidget {
       backgroundColor: const Color(0xFFF8FAFC),
       body: Center(
         child: Container(
-          width: 400,
+          constraints: const BoxConstraints(maxWidth: 400),
           padding: const EdgeInsets.all(40),
           decoration: BoxDecoration(
             color: Colors.white,

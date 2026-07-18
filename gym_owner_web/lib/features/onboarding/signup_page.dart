@@ -203,7 +203,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
       body: Center(
         child: SingleChildScrollView(
           child: Container(
-            width: 400,
+            constraints: const BoxConstraints(maxWidth: 400),
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
               color: Colors.white,

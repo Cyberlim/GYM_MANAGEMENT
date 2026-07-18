@@ -115,7 +115,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         children: [
                           Icon(LucideIcons.mapPin, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
                           const SizedBox(width: 4),
-                          Text(address, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                          Expanded(child: Text(address, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)))),
                         ],
                       ),
                     ],
@@ -128,183 +128,223 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           const SizedBox(height: 32),
           
           // Two Column Layout
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Left Column
-              Expanded(
-                flex: 2,
-                child: Column(
-                  children: [
-                    _buildInfoCard(
-                      context,
-                      title: 'Personal Information',
-                      icon: LucideIcons.user,
-                      fields: {
-                        'Full Name': userName,
-                        'Email Address': email,
-                        'Phone Number': userPhone,
-                        'Role': role,
-                      },
-                      onEdit: () => _showEditPersonalDialog(context, user),
-                    ),
-                    const SizedBox(height: 24),
-                    if (gym == null)
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.3),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(color: Theme.of(context).colorScheme.error.withOpacity(0.5)),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Icon(LucideIcons.alertTriangle, color: Theme.of(context).colorScheme.error),
-                                      const SizedBox(width: 8),
-                                      Text('Gym Setup Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.error)),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'You have not completed your gym setup. Please provide your gym details to unlock all features.',
-                                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            ElevatedButton(
-                              onPressed: () => context.go('/gym-setup'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(context).colorScheme.error,
-                                foregroundColor: Theme.of(context).colorScheme.onError,
-                              ),
-                              child: const Text('Setup Gym Now'),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      _buildInfoCard(
-                        context,
-                        title: 'Gym Information',
-                        icon: LucideIcons.building,
-                        topWidget: gym['logo'] != null && gym['logo'].toString().isNotEmpty 
-                            ? MouseRegion(
-                                cursor: SystemMouseCursors.click,
-                                child: GestureDetector(
-                                  onTap: () => _showFullScreenImage(context, gym['logo']),
-                                  child: Container(
-                                    width: 80,
-                                    height: 80,
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.surfaceVariant,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                                      image: DecorationImage(
-                                        image: NetworkImage(gym['logo']),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : null,
-                        fields: {
-                          'Gym Name': gymName,
-                          'Address': address,
-                          'Contact Phone': gymPhone,
-                          'Established Date': establishedDate,
-                        },
-                        onEdit: () => _showEditGymDialog(context, gym),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 24),
-              // Right Column
-              Expanded(
-                flex: 1,
-                child: Column(
-                  children: [
+          // Two Column Layout
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isDesktop = constraints.maxWidth > 800;
+              
+              Widget leftColumn = Column(
+                children: [
+                  _buildInfoCard(
+                    context,
+                    title: 'Personal Information',
+                    icon: LucideIcons.user,
+                    fields: {
+                      'Full Name': userName,
+                      'Email Address': email,
+                      'Phone Number': userPhone,
+                      'Role': role,
+                    },
+                    onEdit: () => _showEditPersonalDialog(context, user),
+                  ),
+                  const SizedBox(height: 24),
+                  if (gym == null)
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
+                        color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.3),
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                        border: Border.all(color: Theme.of(context).colorScheme.error.withOpacity(0.5)),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                      child: isDesktop 
+                        ? Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Icon(LucideIcons.creditCard, color: Theme.of(context).colorScheme.primary),
-                              const SizedBox(width: 8),
-                              const Text('Subscription', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text('Current Plan', style: TextStyle(fontWeight: FontWeight.bold)),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).colorScheme.primary,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(plan, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                    Row(
+                                      children: [
+                                        Icon(LucideIcons.alertTriangle, color: Theme.of(context).colorScheme.error),
+                                        const SizedBox(width: 8),
+                                        Text('Gym Setup Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.error)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'You have not completed your gym setup. Please provide your gym details to unlock all features.',
+                                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  plan == 'FREE' 
-                                      ? 'You are on the free tier. Upgrade to unlock advanced analytics and unlimited members.'
-                                      : 'You are enjoying all premium features on the $plan plan.', 
-                                  style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                              ),
+                              const SizedBox(width: 16),
+                              ElevatedButton(
+                                onPressed: () => context.go('/gym-setup'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(context).colorScheme.error,
+                                  foregroundColor: Theme.of(context).colorScheme.onError,
                                 ),
-                                const SizedBox(height: 16),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: ElevatedButton(
-                                    onPressed: () => context.push('/choose-plan'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Theme.of(context).colorScheme.primary,
-                                      foregroundColor: Colors.white,
+                                child: const Text('Setup Gym Now'),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(LucideIcons.alertTriangle, color: Theme.of(context).colorScheme.error),
+                                  const SizedBox(width: 8),
+                                  Text('Gym Setup Required', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.error)),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'You have not completed your gym setup. Please provide your gym details to unlock all features.',
+                                style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                              ),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () => context.go('/gym-setup'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Theme.of(context).colorScheme.error,
+                                  foregroundColor: Theme.of(context).colorScheme.onError,
+                                ),
+                                child: const Text('Setup Gym Now'),
+                              ),
+                            ],
+                          ),
+                    )
+                  else
+                    _buildInfoCard(
+                      context,
+                      title: 'Gym Information',
+                      icon: LucideIcons.building,
+                      topWidget: gym['logo'] != null && gym['logo'].toString().isNotEmpty 
+                          ? MouseRegion(
+                              cursor: SystemMouseCursors.click,
+                              child: GestureDetector(
+                                onTap: () => _showFullScreenImage(context, gym['logo']),
+                                child: Container(
+                                  width: 80,
+                                  height: 80,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.surfaceVariant,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                                    image: DecorationImage(
+                                      image: NetworkImage(gym['logo']),
+                                      fit: BoxFit.cover,
                                     ),
-                                    child: const Text('Upgrade to Pro'),
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                              ),
+                            )
+                          : null,
+                      fields: {
+                        'Gym Name': gymName,
+                        'Address': address,
+                        'Contact Phone': gymPhone,
+                        'Established Date': establishedDate,
+                      },
+                      onEdit: () => _showEditGymDialog(context, gym),
                     ),
+                ],
+              );
+              
+              Widget rightColumn = Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(LucideIcons.creditCard, color: Theme.of(context).colorScheme.primary),
+                            const SizedBox(width: 8),
+                            const Text('Subscription', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text('Current Plan', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(plan, style: TextStyle(color: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                plan == 'FREE' 
+                                    ? 'You are on the free tier. Upgrade to unlock advanced analytics and unlimited members.'
+                                    : 'You are enjoying all premium features on the $plan plan.', 
+                                style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7)),
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () => context.push('/choose-plan'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Theme.of(context).colorScheme.primary,
+                                    foregroundColor: Theme.of(context).brightness == Brightness.dark ? Colors.black : Colors.white,
+                                  ),
+                                  child: const Text('Upgrade to Pro'),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+              
+              if (isDesktop) {
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(flex: 2, child: leftColumn),
+                    const SizedBox(width: 24),
+                    Expanded(flex: 1, child: rightColumn),
                   ],
-                ),
-              ),
-            ],
+                );
+              }
+              
+              return Column(
+                children: [
+                  leftColumn,
+                  const SizedBox(height: 24),
+                  rightColumn,
+                ],
+              );
+            },
           ),
         ],
       ),

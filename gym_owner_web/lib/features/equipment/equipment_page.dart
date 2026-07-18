@@ -30,185 +30,269 @@ class EquipmentPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Equipment Management',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Equipment Management',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Track machines, weights, and maintenance schedules',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Track machines, weights, and maintenance schedules',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                ElevatedButton.icon(
-                  onPressed: () => _showAddEquipmentDialog(context, ref),
-                  icon: const Icon(LucideIcons.plus, size: 18),
-                  label: const Text('Add Equipment'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ],
                   ),
-                ),
-              ],
+                  ElevatedButton.icon(
+                    onPressed: () => _showAddEquipmentDialog(context, ref),
+                    icon: const Icon(LucideIcons.plus, size: 18),
+                    label: const Text('Add Equipment'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 32),
 
             // Dashboard Cards
             Consumer(
               builder: (context, ref, child) {
-                return Row(
-                  children: [
-                    Expanded(
-                      child: _DashboardCard(
-                        title: 'Total Machines',
-                        value: totalMachines.toString(),
-                        icon: LucideIcons.dumbbell,
-                        color: Colors.blue,
-                        isSelected: currentFilter.status == 'All',
-                        onTap: () => ref.read(equipmentFilterProvider.notifier).setStatus('All'),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _DashboardCard(
-                        title: 'Active',
-                        value: activeCount.toString(),
-                        icon: LucideIcons.checkCircle,
-                        color: Colors.green,
-                        isSelected: currentFilter.status == 'Active',
-                        onTap: () => ref.read(equipmentFilterProvider.notifier).setStatus('Active'),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _DashboardCard(
-                        title: 'Under Maintenance',
-                        value: maintenanceCount.toString(),
-                        icon: LucideIcons.wrench,
-                        color: Colors.orange,
-                        isSelected: currentFilter.status == 'Under Maintenance',
-                        onTap: () => ref.read(equipmentFilterProvider.notifier).setStatus('Under Maintenance'),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _DashboardCard(
-                        title: 'Under Repair',
-                        value: brokenCount.toString(),
-                        icon: LucideIcons.alertOctagon,
-                        color: Colors.red,
-                        isSelected: currentFilter.status == 'Under Repair',
-                        onTap: () => ref.read(equipmentFilterProvider.notifier).setStatus('Under Repair'),
-                      ),
-                    ),
-                  ],
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isDesktop = constraints.maxWidth > 800;
+                    if (isDesktop) {
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: _DashboardCard(
+                              title: 'Total Machines',
+                              value: totalMachines.toString(),
+                              icon: LucideIcons.dumbbell,
+                              color: Colors.blue,
+                              isSelected: currentFilter.status == 'All',
+                              onTap: () => ref.read(equipmentFilterProvider.notifier).setStatus('All'),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _DashboardCard(
+                              title: 'Active',
+                              value: activeCount.toString(),
+                              icon: LucideIcons.checkCircle,
+                              color: Colors.green,
+                              isSelected: currentFilter.status == 'Active',
+                              onTap: () => ref.read(equipmentFilterProvider.notifier).setStatus('Active'),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _DashboardCard(
+                              title: 'Under Maintenance',
+                              value: maintenanceCount.toString(),
+                              icon: LucideIcons.wrench,
+                              color: Colors.orange,
+                              isSelected: currentFilter.status == 'Under Maintenance',
+                              onTap: () => ref.read(equipmentFilterProvider.notifier).setStatus('Under Maintenance'),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _DashboardCard(
+                              title: 'Under Repair',
+                              value: brokenCount.toString(),
+                              icon: LucideIcons.alertOctagon,
+                              color: Colors.red,
+                              isSelected: currentFilter.status == 'Under Repair',
+                              onTap: () => ref.read(equipmentFilterProvider.notifier).setStatus('Under Repair'),
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+
+                    final isMobile = constraints.maxWidth < 500;
+                    final cardWidth = isMobile ? (constraints.maxWidth - 16) / 2 : 200.0;
+                    
+                    return Wrap(
+                      spacing: 16,
+                      runSpacing: 16,
+                      children: [
+                        SizedBox(
+                          width: cardWidth,
+                          child: _DashboardCard(
+                            title: 'Total Machines',
+                            value: totalMachines.toString(),
+                            icon: LucideIcons.dumbbell,
+                            color: Colors.blue,
+                            isSelected: currentFilter.status == 'All',
+                            onTap: () => ref.read(equipmentFilterProvider.notifier).setStatus('All'),
+                          ),
+                        ),
+                        SizedBox(
+                          width: cardWidth,
+                          child: _DashboardCard(
+                            title: 'Active',
+                            value: activeCount.toString(),
+                            icon: LucideIcons.checkCircle,
+                            color: Colors.green,
+                            isSelected: currentFilter.status == 'Active',
+                            onTap: () => ref.read(equipmentFilterProvider.notifier).setStatus('Active'),
+                          ),
+                        ),
+                        SizedBox(
+                          width: cardWidth,
+                          child: _DashboardCard(
+                            title: 'Under Maintenance',
+                            value: maintenanceCount.toString(),
+                            icon: LucideIcons.wrench,
+                            color: Colors.orange,
+                            isSelected: currentFilter.status == 'Under Maintenance',
+                            onTap: () => ref.read(equipmentFilterProvider.notifier).setStatus('Under Maintenance'),
+                          ),
+                        ),
+                        SizedBox(
+                          width: cardWidth,
+                          child: _DashboardCard(
+                            title: 'Under Repair',
+                            value: brokenCount.toString(),
+                            icon: LucideIcons.alertOctagon,
+                            color: Colors.red,
+                            isSelected: currentFilter.status == 'Under Repair',
+                            onTap: () => ref.read(equipmentFilterProvider.notifier).setStatus('Under Repair'),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
                 );
               },
             ),
             const SizedBox(height: 32),
 
             // Search Bar
-            Row(
-              children: [
-                SizedBox(
-                  width: 300,
-                  child: TextField(
-                    onChanged: (value) => ref.read(equipmentSearchQueryProvider.notifier).updateQuery(value),
-                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                    decoration: InputDecoration(
-                      hintText: 'Search equipment or zone...',
-                      hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                      prefixIcon: Icon(LucideIcons.search, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                      filled: true,
-                      fillColor: Theme.of(context).colorScheme.surface,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isDesktop = constraints.maxWidth > 800;
+                final searchField = TextField(
+                  onChanged: (value) => ref.read(equipmentSearchQueryProvider.notifier).updateQuery(value),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                  decoration: InputDecoration(
+                    hintText: 'Search equipment or zone...',
+                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                    prefixIcon: Icon(LucideIcons.search, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surface,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Theme.of(context).dividerColor),
-                  ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: currentFilter.equipmentType,
-                      icon: const Icon(LucideIcons.filter, size: 16),
-                      hint: const Text('Type'),
-                      items: ['All', 'Cardio', 'Strength', 'Free Weights', 'Functional Training', 'Accessories', 'Recovery Equipment', 'Custom']
-                          .map((type) => DropdownMenuItem(value: type, child: Text(type == 'All' ? 'All Types' : type)))
-                          .toList(),
-                      onChanged: (val) {
-                        if (val != null) {
-                          ref.read(equipmentFilterProvider.notifier).setType(val);
-                        }
-                      },
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                   ),
-                ),
-              ],
+                );
+
+                return Row(
+                  children: [
+                    isDesktop ? SizedBox(width: 300, child: searchField) : Expanded(child: searchField),
+                    const SizedBox(width: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Theme.of(context).dividerColor),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: currentFilter.equipmentType,
+                          icon: const Icon(LucideIcons.filter, size: 16),
+                          hint: const Text('Type'),
+                          items: ['All', 'Cardio', 'Strength', 'Free Weights', 'Functional Training', 'Accessories', 'Recovery Equipment', 'Custom']
+                              .map((type) => DropdownMenuItem(value: type, child: Text(type == 'All' ? 'All Types' : type)))
+                              .toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              ref.read(equipmentFilterProvider.notifier).setType(val);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
             ),
             const SizedBox(height: 24),
 
             // Equipment List
-            Container(
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-              ),
-              child: equipmentAsync.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(32.0),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (error, stack) => Padding(
-                  padding: const EdgeInsets.all(32.0),
-                  child: Center(child: Text('Error: $error')),
-                ),
-                data: (equipment) => equipment.isEmpty
-                    ? const Padding(
-                        padding: EdgeInsets.all(32.0),
-                        child: Center(child: Text('No equipment found.')),
-                      )
-                    : ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: equipment.length,
-                        separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2), height: 1),
-                        itemBuilder: (context, index) {
-                          final item = equipment[index];
-                          final isHighlighted = item.id == highlightId;
-                          return _EquipmentRow(item: item, isHighlighted: isHighlighted);
-                        },
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final listWidth = constraints.maxWidth > 800 ? constraints.maxWidth : 800.0;
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints.tightFor(
+                      width: listWidth,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
                       ),
-              ),
+                      child: equipmentAsync.when(
+                        loading: () => const Padding(
+                          padding: EdgeInsets.all(32.0),
+                          child: Center(child: CircularProgressIndicator()),
+                        ),
+                        error: (error, stack) => Padding(
+                          padding: const EdgeInsets.all(32.0),
+                          child: Center(child: Text('Error: $error')),
+                        ),
+                        data: (equipment) => equipment.isEmpty
+                            ? const Padding(
+                                padding: EdgeInsets.all(32.0),
+                                child: Center(child: Text('No equipment found.')),
+                              )
+                            : ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: equipment.length,
+                                separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2), height: 1),
+                                itemBuilder: (context, index) {
+                                  final item = equipment[index];
+                                  final isHighlighted = item.id == highlightId;
+                                  return _EquipmentRow(item: item, isHighlighted: isHighlighted);
+                                },
+                              ),
+                      ),
+                    ),
+                  ),
+                );
+              }
             ),
           ],
         ),
@@ -269,21 +353,24 @@ class _DashboardCard extends StatelessWidget {
                 ),
             ],
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(icon, color: color, size: 24),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isSmall = constraints.maxWidth < 200;
+              
+              if (isSmall) {
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icon, color: color, size: 24),
+                    ),
+                    const SizedBox(height: 16),
                     Text(
                       title,
                       style: TextStyle(
@@ -291,19 +378,58 @@ class _DashboardCard extends StatelessWidget {
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                       ),
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       value,
                       style: const TextStyle(
-                        fontSize: 24,
+                        fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                ),
-              ),
-            ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: color.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: color, size: 24),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          value,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -373,15 +499,18 @@ class _EquipmentRow extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.machineName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                Text(item.machineName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 4),
                 Row(
                   children: [
                     Icon(LucideIcons.mapPin, size: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
                     const SizedBox(width: 4),
-                    Text(
-                      item.location,
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                    Expanded(
+                      child: Text(
+                        item.location,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -395,7 +524,7 @@ class _EquipmentRow extends ConsumerWidget {
               children: [
                 const Text('Type', style: TextStyle(fontSize: 12, color: Colors.grey)),
                 const SizedBox(height: 4),
-                Text(item.equipmentType, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(item.equipmentType, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
@@ -406,7 +535,7 @@ class _EquipmentRow extends ConsumerWidget {
               children: [
                 const Text('Brand', style: TextStyle(fontSize: 12, color: Colors.grey)),
                 const SizedBox(height: 4),
-                Text(item.brand, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(item.brand, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
           ),
@@ -429,6 +558,7 @@ class _EquipmentRow extends ConsumerWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),

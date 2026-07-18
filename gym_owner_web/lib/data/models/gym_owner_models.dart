@@ -207,6 +207,7 @@ class MessageModel {
   final String sender;
   final String content;
   final String time;
+  final DateTime timestamp;
   final bool isSentByMe;
   final bool isRead;
 
@@ -215,6 +216,7 @@ class MessageModel {
     required this.sender,
     required this.content,
     required this.time,
+    required this.timestamp,
     this.isSentByMe = false,
     this.isRead = true,
   });
@@ -224,6 +226,7 @@ class MessageModel {
     String? sender,
     String? content,
     String? time,
+    DateTime? timestamp,
     bool? isSentByMe,
     bool? isRead,
   }) {
@@ -232,6 +235,7 @@ class MessageModel {
       sender: sender ?? this.sender,
       content: content ?? this.content,
       time: time ?? this.time,
+      timestamp: timestamp ?? this.timestamp,
       isSentByMe: isSentByMe ?? this.isSentByMe,
       isRead: isRead ?? this.isRead,
     );

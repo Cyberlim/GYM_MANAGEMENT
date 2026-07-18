@@ -67,7 +67,7 @@ class _MembersPageState extends ConsumerState<MembersPage> {
                         ),
                         child: LayoutBuilder(
                           builder: (context, constraints) {
-                            final tableWidth = constraints.maxWidth > 800 ? constraints.maxWidth : 800.0;
+                            final tableWidth = constraints.maxWidth > 600 ? constraints.maxWidth : 600.0;
                             return SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: ConstrainedBox(
@@ -102,7 +102,7 @@ class _MembersPageState extends ConsumerState<MembersPage> {
                           maxCrossAxisExtent: 350,
                           crossAxisSpacing: 24,
                           mainAxisSpacing: 24,
-                          childAspectRatio: 0.85,
+                          mainAxisExtent: 360,
                         ),
                         itemCount: members.length,
                         itemBuilder: (context, index) {
@@ -322,9 +322,33 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                 child: ScrollConfiguration(
                   behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
                   child: SingleChildScrollView(
-                  child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final isMobile = constraints.maxWidth < 450;
+                      
+                      Widget buildResponsiveRow(Widget child1, Widget child2) {
+                        if (isMobile) {
+                          return Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              child1,
+                              const SizedBox(height: 16),
+                              child2,
+                            ],
+                          );
+                        }
+                        return Row(
+                          children: [
+                            Expanded(child: child1),
+                            const SizedBox(width: 16),
+                            Expanded(child: child2),
+                          ],
+                        );
+                      }
+
+                      return Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
                     Center(
                       child: Column(
                         children: [
@@ -372,94 +396,75 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                       ),
                     ),
                     const SizedBox(height: 24),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: nameController,
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                            decoration: InputDecoration(
-                              labelText: 'Full Name',
-                              prefixIcon: const Icon(LucideIcons.user),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                          ),
+                    buildResponsiveRow(
+                      TextFormField(
+                        controller: nameController,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                        decoration: InputDecoration(
+                          labelText: 'Full Name',
+                          prefixIcon: const Icon(LucideIcons.user),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: emailController,
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                            decoration: InputDecoration(
-                              labelText: 'Email Address',
-                              prefixIcon: const Icon(LucideIcons.mail),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                          ),
+                      ),
+                      TextFormField(
+                        controller: emailController,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                        decoration: InputDecoration(
+                          labelText: 'Email Address',
+                          prefixIcon: const Icon(LucideIcons.mail),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: phoneController,
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                            decoration: InputDecoration(
-                              labelText: 'Phone Number',
-                              prefixIcon: const Icon(LucideIcons.phone),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                          ),
+                    buildResponsiveRow(
+                      TextFormField(
+                        controller: phoneController,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                        decoration: InputDecoration(
+                          labelText: 'Phone Number',
+                          prefixIcon: const Icon(LucideIcons.phone),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: TextFormField(
-                            controller: addressController,
-                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                            decoration: InputDecoration(
-                              labelText: 'Address',
-                              prefixIcon: const Icon(LucideIcons.mapPin),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                          ),
+                      ),
+                      TextFormField(
+                        controller: addressController,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                        decoration: InputDecoration(
+                          labelText: 'Address',
+                          prefixIcon: const Icon(LucideIcons.mapPin),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: selectedPlan,
-                            decoration: InputDecoration(
-                              labelText: 'Membership Plan',
-                              prefixIcon: const Icon(LucideIcons.creditCard),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            items: ['Basic Monthly', 'Pro Annual', 'Student', 'Gold Plan']
-                                .map((p) => DropdownMenuItem(value: p, child: Text(p)))
-                                .toList(),
-                            onChanged: (val) => setState(() => selectedPlan = val ?? 'Pro Annual'),
-                          ),
+                    buildResponsiveRow(
+                      DropdownButtonFormField<String>(
+                        value: selectedPlan,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Membership Plan',
+                          prefixIcon: const Icon(LucideIcons.creditCard),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: selectedStatus,
-                            decoration: InputDecoration(
-                              labelText: 'Status',
-                              prefixIcon: const Icon(LucideIcons.activity),
-                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                            ),
-                            items: ['Active', 'Expiring Soon', 'Expired']
-                                .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                                .toList(),
-                            onChanged: (val) => setState(() => selectedStatus = val ?? 'Active'),
-                          ),
+                        items: ['Basic Monthly', 'Pro Annual', 'Student', 'Gold Plan']
+                            .map((p) => DropdownMenuItem(value: p, child: Text(p, maxLines: 1, overflow: TextOverflow.ellipsis)))
+                            .toList(),
+                        onChanged: (val) => setState(() => selectedPlan = val ?? 'Pro Annual'),
+                      ),
+                      DropdownButtonFormField<String>(
+                        value: selectedStatus,
+                        isExpanded: true,
+                        decoration: InputDecoration(
+                          labelText: 'Status',
+                          prefixIcon: const Icon(LucideIcons.activity),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         ),
-                      ],
+                        items: ['Active', 'Expiring Soon', 'Expired']
+                            .map((s) => DropdownMenuItem(value: s, child: Text(s, maxLines: 1, overflow: TextOverflow.ellipsis)))
+                            .toList(),
+                        onChanged: (val) => setState(() => selectedStatus = val ?? 'Active'),
+                      ),
                     ),
                     const SizedBox(height: 16),
                     Consumer(
@@ -471,14 +476,15 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                           data: (trainers) {
                             return DropdownButtonFormField<String?>(
                               value: selectedTrainerId,
+                              isExpanded: true,
                               decoration: InputDecoration(
                                 labelText: 'Assign Trainer (Optional)',
                                 prefixIcon: const Icon(LucideIcons.users),
                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                               items: [
-                                const DropdownMenuItem<String?>(value: null, child: Text('No Trainer')),
-                                ...trainers.map((t) => DropdownMenuItem<String?>(value: t.id, child: Text(t.name))),
+                                const DropdownMenuItem<String?>(value: null, child: Text('No Trainer', maxLines: 1, overflow: TextOverflow.ellipsis)),
+                                ...trainers.map((t) => DropdownMenuItem<String?>(value: t.id, child: Text(t.name, maxLines: 1, overflow: TextOverflow.ellipsis))),
                               ],
                               onChanged: (val) => setState(() => selectedTrainerId = val),
                             );
@@ -487,52 +493,45 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                       }
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: InkWell(
-                            onTap: () async {
-                              final date = await showDatePicker(
-                                context: context,
-                                initialDate: selectedJoinDate,
-                                firstDate: DateTime(2000),
-                                lastDate: DateTime(2100),
-                              );
-                              if (date != null) setState(() => selectedJoinDate = date);
-                            },
-                            child: InputDecorator(
-                              decoration: InputDecoration(
-                                labelText: 'Join Date',
-                                prefixIcon: const Icon(LucideIcons.calendar),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                              child: Text('${selectedJoinDate.year}-${selectedJoinDate.month.toString().padLeft(2, '0')}-${selectedJoinDate.day.toString().padLeft(2, '0')}'),
-                            ),
+                    buildResponsiveRow(
+                      InkWell(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: selectedJoinDate,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
+                          );
+                          if (date != null) setState(() => selectedJoinDate = date);
+                        },
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Join Date',
+                            prefixIcon: const Icon(LucideIcons.calendar),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           ),
+                          child: Text('${selectedJoinDate.year}-${selectedJoinDate.month.toString().padLeft(2, '0')}-${selectedJoinDate.day.toString().padLeft(2, '0')}', maxLines: 1, overflow: TextOverflow.ellipsis),
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: InkWell(
-                            onTap: () async {
-                              final date = await showDatePicker(
-                                context: context,
-                                initialDate: selectedExpiryDate,
-                                firstDate: DateTime(2000),
-                                lastDate: DateTime(2100),
-                              );
-                              if (date != null) setState(() => selectedExpiryDate = date);
-                            },
-                            child: InputDecorator(
-                              decoration: InputDecoration(
-                                labelText: 'Expiry Date',
-                                prefixIcon: const Icon(LucideIcons.calendarClock),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                              child: Text('${selectedExpiryDate.year}-${selectedExpiryDate.month.toString().padLeft(2, '0')}-${selectedExpiryDate.day.toString().padLeft(2, '0')}'),
-                            ),
+                      ),
+                      InkWell(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: selectedExpiryDate,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
+                          );
+                          if (date != null) setState(() => selectedExpiryDate = date);
+                        },
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Expiry Date',
+                            prefixIcon: const Icon(LucideIcons.calendarClock),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           ),
+                          child: Text('${selectedExpiryDate.year}-${selectedExpiryDate.month.toString().padLeft(2, '0')}-${selectedExpiryDate.day.toString().padLeft(2, '0')}', maxLines: 1, overflow: TextOverflow.ellipsis),
                         ),
-                      ],
+                      ),
                     ),
                     const SizedBox(height: 16),
                     const Align(
@@ -596,6 +595,8 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                       ),
                     ),
                   ],
+                );
+                },
                 ),
               ),
             ),
@@ -1099,11 +1100,15 @@ class _MemberCard extends ConsumerWidget {
                       Text(
                         member.name,
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 6),
                       Text(
                         member.email,
                         style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 16),
                       Wrap(
@@ -1127,18 +1132,24 @@ class _MemberCard extends ConsumerWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Join Date',
-                            style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                          ),
-                          Text(
-                            DateFormat('MMM dd, yyyy').format(member.joinDate),
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
-                          ),
-                        ],
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Join Date',
+                              style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              DateFormat('MMM dd, yyyy').format(member.joinDate),
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
                       Row(
                         children: [

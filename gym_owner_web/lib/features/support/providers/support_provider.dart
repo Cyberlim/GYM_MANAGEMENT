@@ -26,11 +26,13 @@ class SupportMessagesNotifier extends AsyncNotifier<List<MessageModel>> {
       if (response != null && response is List) {
         return response.map((data) {
           final isSentByMe = data['senderRole'] == 'gym_owner';
+          final timestamp = DateTime.parse(data['createdAt'] ?? DateTime.now().toIso8601String());
           return MessageModel(
             id: data['_id'] ?? '',
             sender: isSentByMe ? 'You' : 'Superadmin Support',
             content: data['message'] ?? '',
-            time: DateFormat('hh:mm a').format(DateTime.parse(data['createdAt'] ?? DateTime.now().toIso8601String())),
+            time: DateFormat('hh:mm a').format(timestamp),
+            timestamp: timestamp,
             isSentByMe: isSentByMe,
             isRead: data['isRead'] ?? true, 
           );

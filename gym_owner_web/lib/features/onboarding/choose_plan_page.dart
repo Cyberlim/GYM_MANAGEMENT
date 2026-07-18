@@ -74,77 +74,87 @@ class _ChoosePlanPageState extends State<ChoosePlanPage> {
               ),
               const SizedBox(height: 64),
 
-              // Plan Cards Row
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildPlanCard(
-                    context: context,
-                    title: 'Basic',
-                    subtitle: 'Perfect for small gyms getting started',
-                    icon: LucideIcons.dumbbell,
-                    primaryColor: const Color(0xFF6366F1), // Indigo/Purple
-                    lightColor: const Color(0xFFEEF2FF),
-                    basePrice: 999,
-                    features: [
-                      'Up to 200 Members',
-                      'Up to 5 Trainers',
-                      '1 Branch',
-                      'Reception & Attendance',
-                      'Payment Management',
-                      'Basic Reports',
-                      'Email Support',
-                    ],
-                    isPopular: false,
-                  ),
-                  const SizedBox(width: 24),
-                  _buildPlanCard(
-                    context: context,
-                    title: 'Pro',
-                    subtitle: 'Best for growing gyms and fitness centers',
-                    icon: LucideIcons.crown,
-                    primaryColor: const Color(0xFF16A34A), // Green
-                    lightColor: const Color(0xFFDCFCE7),
-                    basePrice: 2499,
-                    originalPrice: 2997,
-                    savePercent: 17,
-                    features: [
-                      'Up to 1,000 Members',
-                      'Up to 20 Trainers',
-                      '5 Branches',
-                      'Everything in Basic',
-                      'Inventory Management',
-                      'Advanced Reports',
-                      'Priority Support',
-                      'SMS & Email Notifications',
-                    ],
-                    isPopular: true,
-                  ),
-                  const SizedBox(width: 24),
-                  _buildPlanCard(
-                    context: context,
-                    title: 'Enterprise',
-                    subtitle: 'For large gyms and multi-branch chains',
-                    icon: LucideIcons.gem,
-                    primaryColor: const Color(0xFFD97706), // Orange
-                    lightColor: const Color(0xFFFEF3C7),
-                    basePrice: 3999,
-                    originalPrice: 4999,
-                    savePercent: 20,
-                    features: [
-                      'Unlimited Members',
-                      'Unlimited Trainers',
-                      'Unlimited Branches',
-                      'Everything in Pro',
-                      'Advanced Analytics',
-                      'Custom Roles & Permissions',
-                      'API Access',
-                      'Dedicated Support',
-                    ],
-                    isPopular: false,
-                  ),
-                ],
+              // Plan Cards (Horizontally Scrollable)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildPlanCard(
+                            context: context,
+                            title: 'Basic',
+                            subtitle: 'Perfect for small gyms getting started',
+                            icon: LucideIcons.dumbbell,
+                            primaryColor: const Color(0xFF6366F1), // Indigo/Purple
+                            lightColor: const Color(0xFFEEF2FF),
+                            basePrice: 999,
+                            features: [
+                              'Up to 200 Members',
+                              'Up to 5 Trainers',
+                              '1 Branch',
+                              'Reception & Attendance',
+                              'Payment Management',
+                              'Basic Reports',
+                              'Email Support',
+                            ],
+                            isPopular: false,
+                          ),
+                          const SizedBox(width: 24),
+                          _buildPlanCard(
+                            context: context,
+                            title: 'Pro',
+                            subtitle: 'Best for growing gyms and fitness centers',
+                            icon: LucideIcons.crown,
+                            primaryColor: const Color(0xFF16A34A), // Green
+                            lightColor: const Color(0xFFDCFCE7),
+                            basePrice: 2499,
+                            originalPrice: 2997,
+                            savePercent: 17,
+                            features: [
+                              'Up to 1,000 Members',
+                              'Up to 20 Trainers',
+                              '5 Branches',
+                              'Everything in Basic',
+                              'Inventory Management',
+                              'Advanced Reports',
+                              'Priority Support',
+                              'SMS & Email Notifications',
+                            ],
+                            isPopular: true,
+                          ),
+                          const SizedBox(width: 24),
+                          _buildPlanCard(
+                            context: context,
+                            title: 'Enterprise',
+                            subtitle: 'For large gyms and multi-branch chains',
+                            icon: LucideIcons.gem,
+                            primaryColor: const Color(0xFFD97706), // Orange
+                            lightColor: const Color(0xFFFEF3C7),
+                            basePrice: 3999,
+                            originalPrice: 4999,
+                            savePercent: 20,
+                            features: [
+                              'Unlimited Members',
+                              'Unlimited Trainers',
+                              'Unlimited Branches',
+                              'Everything in Pro',
+                              'Advanced Analytics',
+                              'Custom Roles & Permissions',
+                              'API Access',
+                              'Dedicated Support',
+                            ],
+                            isPopular: false,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),

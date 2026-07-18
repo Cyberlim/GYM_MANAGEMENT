@@ -48,21 +48,36 @@ class TrainersPage extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: Theme.of(context).dividerColor),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            _buildTableHeader(context),
-                            Divider(color: Theme.of(context).dividerColor, height: 1),
-                            Expanded(
-                              child: ListView.separated(
-                                itemCount: trainers.length,
-                                separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor, height: 1),
-                                itemBuilder: (context, index) {
-                                  return _TrainerTableRow(trainer: trainers[index]);
-                                },
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final tableWidth = constraints.maxWidth > 600 ? constraints.maxWidth : 600.0;
+                            return SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints.tightFor(
+                                  width: tableWidth,
+                                  height: constraints.maxHeight,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                                  children: [
+                                    _buildTableHeader(context),
+                                    Divider(color: Theme.of(context).dividerColor, height: 1),
+                                    Expanded(
+                                      child: ListView.separated(
+                                        padding: EdgeInsets.zero,
+                                        itemCount: trainers.length,
+                                        separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor, height: 1),
+                                        itemBuilder: (context, index) {
+                                          return _TrainerTableRow(trainer: trainers[index]);
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ],
+                            );
+                          }
                         ),
                       )
                     : GridView.builder(
@@ -70,7 +85,7 @@ class TrainersPage extends ConsumerWidget {
                           maxCrossAxisExtent: 350,
                           crossAxisSpacing: 24,
                           mainAxisSpacing: 24,
-                          childAspectRatio: 0.85,
+                          mainAxisExtent: 320,
                         ),
                         itemCount: trainers.length,
                         itemBuilder: (context, index) {
@@ -89,18 +104,20 @@ class TrainersPage extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
       child: Row(
         children: [
-          Expanded(flex: 3, child: Text('NAME', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.bold))),
+          Expanded(flex: 2, child: Text('NAME', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.bold))),
           Expanded(flex: 2, child: Text('SPECIALIZATION', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.bold))),
           Expanded(flex: 2, child: Text('EXPERIENCE & RATING', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.bold))),
-          Expanded(flex: 2, child: Text('CONTACT', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.bold))),
+          Expanded(flex: 3, child: Text('CONTACT', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.bold))),
         ],
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context, WidgetRef ref, bool isListView) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Wrap(
+      spacing: 16,
+      runSpacing: 16,
+      alignment: WrapAlignment.spaceBetween,
       children: [
         SizedBox(
           width: 300,
@@ -124,7 +141,10 @@ class TrainersPage extends ConsumerWidget {
             ),
           ),
         ),
-        Row(
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Container(
               height: 48,
@@ -149,7 +169,6 @@ class TrainersPage extends ConsumerWidget {
                 ],
               ),
             ),
-            const SizedBox(width: 16),
             ElevatedButton.icon(
               onPressed: () => showTrainerDialog(context, ref),
               icon: const Icon(LucideIcons.plus, size: 18),
@@ -548,6 +567,8 @@ class _TrainerCard extends ConsumerWidget {
                           fontWeight: FontWeight.bold,
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
                       Container(
@@ -564,6 +585,8 @@ class _TrainerCard extends ConsumerWidget {
                             color: specColor,
                             fontWeight: FontWeight.bold,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ],
@@ -577,25 +600,31 @@ class _TrainerCard extends ConsumerWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Assigned Members',
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Assigned Members',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                          Text(
-                            '${trainer.assignedMembers}',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurface,
+                            Text(
+                              '${trainer.assignedMembers}',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       Row(
                         children: [
@@ -653,7 +682,7 @@ class _TrainerTableRow extends ConsumerWidget {
             children: [
               // NAME & AVATAR
               Expanded(
-                flex: 3,
+                flex: 2,
                 child: Row(
                   children: [
                     CircleAvatar(
@@ -668,12 +697,14 @@ class _TrainerTableRow extends ConsumerWidget {
                           : null,
                     ),
                     const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        trainer.name,
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                      Expanded(
+                        child: Text(
+                          trainer.name,
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -697,6 +728,8 @@ class _TrainerTableRow extends ConsumerWidget {
                         color: _getSpecializationColor(trainer.specialization),
                         fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
@@ -708,7 +741,7 @@ class _TrainerTableRow extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('${trainer.experienceYears} Years Exp.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                    Text('${trainer.experienceYears} Years Exp.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
                     const SizedBox(height: 4),
                     Row(
                       children: [
@@ -723,7 +756,7 @@ class _TrainerTableRow extends ConsumerWidget {
 
               // CONTACT & ACTIONS
               Expanded(
-                flex: 2,
+                flex: 3,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -732,9 +765,9 @@ class _TrainerTableRow extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (trainer.phone.isNotEmpty)
-                            Text(trainer.phone, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13)),
+                            Text(trainer.phone, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
                           if (trainer.email.isNotEmpty)
-                            Text(trainer.email, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12)),
+                            Text(trainer.email, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
                         ],
                       ),
                     ),

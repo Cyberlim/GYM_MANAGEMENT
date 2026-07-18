@@ -20,37 +20,43 @@ class NotificationsPage extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Notifications',
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Stay updated on important events',
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                    ),
-                  ],
-                ),
-                if (notifications.isNotEmpty)
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      ref.read(notificationsProvider.notifier).markAllAsRead();
-                    },
-                    icon: const Icon(LucideIcons.checkCheck, size: 16),
-                    label: const Text('Mark All as Read'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                      foregroundColor: Theme.of(context).colorScheme.primary,
-                      elevation: 0,
-                    ),
+            SizedBox(
+              width: double.infinity,
+              child: Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 16,
+                runSpacing: 16,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Notifications',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Stay updated on important events',
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                      ),
+                    ],
                   ),
-              ],
+                  if (notifications.isNotEmpty)
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        ref.read(notificationsProvider.notifier).markAllAsRead();
+                      },
+                      icon: const Icon(LucideIcons.checkCheck, size: 16),
+                      label: const Text('Mark All as Read'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        foregroundColor: Theme.of(context).colorScheme.primary,
+                        elevation: 0,
+                      ),
+                    ),
+                ],
+              ),
             ),
             const SizedBox(height: 32),
             if (notifications.isEmpty)

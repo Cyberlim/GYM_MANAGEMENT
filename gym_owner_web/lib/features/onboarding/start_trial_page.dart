@@ -60,7 +60,7 @@ class _StartTrialPageState extends State<StartTrialPage> {
       backgroundColor: const Color(0xFFF8FAFC),
       body: Center(
         child: Container(
-          width: 450,
+          constraints: const BoxConstraints(maxWidth: 450),
           padding: const EdgeInsets.all(48),
           decoration: BoxDecoration(
             color: Colors.white,

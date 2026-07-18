@@ -188,115 +188,172 @@ class ReportsPage extends ConsumerWidget {
             const SizedBox(height: 32),
 
             // KPI Dashboard
-            Row(
-              children: [
-                Expanded(child: _KPICard(
-                  title: 'Total Revenue', 
-                  value: '₹${NumberFormat('#,##0.00').format(reportsData.totalRevenue)}', 
-                  icon: LucideIcons.indianRupee, 
-                  color: Colors.green,
-                  onTap: () => _showRevenueDetails(context, reportsData.recentRevenues),
-                )),
-                const SizedBox(width: 16),
-                Expanded(child: _KPICard(
-                  title: 'Total Expenses', 
-                  value: '₹${NumberFormat('#,##0.00').format(reportsData.totalExpenses)}', 
-                  icon: LucideIcons.trendingDown, 
-                  color: Colors.red,
-                  onTap: () => _showExpenseDetails(context, reportsData.recentExpenses),
-                )),
-                const SizedBox(width: 16),
-                Expanded(child: _KPICard(
-                  title: 'Net Profit', 
-                  value: '₹${NumberFormat('#,##0.00').format(reportsData.netProfit)}', 
-                  icon: LucideIcons.pieChart, 
-                  color: Colors.blue,
-                  onTap: () => _showNetProfitDetails(context, reportsData),
-                )),
-                const SizedBox(width: 16),
-                Expanded(child: _KPICard(
-                  title: 'Active Members', 
-                  value: '${reportsData.activeMembers}', 
-                  icon: LucideIcons.users, 
-                  color: Colors.orange,
-                  onTap: () => _showActiveMembers(context, reportsData.activeMembersList),
-                )),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isDesktop = constraints.maxWidth > 800;
+                if (isDesktop) {
+                  return Row(
+                    children: [
+                      Expanded(child: _KPICard(
+                        title: 'Total Revenue', 
+                        value: '₹${NumberFormat('#,##0.00').format(reportsData.totalRevenue)}', 
+                        icon: LucideIcons.indianRupee, 
+                        color: Colors.green,
+                        onTap: () => _showRevenueDetails(context, reportsData.recentRevenues),
+                      )),
+                      const SizedBox(width: 16),
+                      Expanded(child: _KPICard(
+                        title: 'Total Expenses', 
+                        value: '₹${NumberFormat('#,##0.00').format(reportsData.totalExpenses)}', 
+                        icon: LucideIcons.trendingDown, 
+                        color: Colors.red,
+                        onTap: () => _showExpenseDetails(context, reportsData.recentExpenses),
+                      )),
+                      const SizedBox(width: 16),
+                      Expanded(child: _KPICard(
+                        title: 'Net Profit', 
+                        value: '₹${NumberFormat('#,##0.00').format(reportsData.netProfit)}', 
+                        icon: LucideIcons.pieChart, 
+                        color: Colors.blue,
+                        onTap: () => _showNetProfitDetails(context, reportsData),
+                      )),
+                      const SizedBox(width: 16),
+                      Expanded(child: _KPICard(
+                        title: 'Active Members', 
+                        value: '${reportsData.activeMembers}', 
+                        icon: LucideIcons.users, 
+                        color: Colors.orange,
+                        onTap: () => _showActiveMembers(context, reportsData.activeMembersList),
+                      )),
+                    ],
+                  );
+                }
+
+                final isMobile = constraints.maxWidth < 500;
+                final cardWidth = isMobile ? (constraints.maxWidth - 16) / 2 : 200.0;
+
+                return Wrap(
+                  spacing: 16,
+                  runSpacing: 16,
+                  children: [
+                    SizedBox(width: cardWidth, child: _KPICard(
+                      title: 'Total Revenue', 
+                      value: '₹${NumberFormat('#,##0.00').format(reportsData.totalRevenue)}', 
+                      icon: LucideIcons.indianRupee, 
+                      color: Colors.green,
+                      onTap: () => _showRevenueDetails(context, reportsData.recentRevenues),
+                    )),
+                    SizedBox(width: cardWidth, child: _KPICard(
+                      title: 'Total Expenses', 
+                      value: '₹${NumberFormat('#,##0.00').format(reportsData.totalExpenses)}', 
+                      icon: LucideIcons.trendingDown, 
+                      color: Colors.red,
+                      onTap: () => _showExpenseDetails(context, reportsData.recentExpenses),
+                    )),
+                    SizedBox(width: cardWidth, child: _KPICard(
+                      title: 'Net Profit', 
+                      value: '₹${NumberFormat('#,##0.00').format(reportsData.netProfit)}', 
+                      icon: LucideIcons.pieChart, 
+                      color: Colors.blue,
+                      onTap: () => _showNetProfitDetails(context, reportsData),
+                    )),
+                    SizedBox(width: cardWidth, child: _KPICard(
+                      title: 'Active Members', 
+                      value: '${reportsData.activeMembers}', 
+                      icon: LucideIcons.users, 
+                      color: Colors.orange,
+                      onTap: () => _showActiveMembers(context, reportsData.activeMembersList),
+                    )),
+                  ],
+                );
+              }
             ),
             const SizedBox(height: 32),
 
             // Charts
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Line Chart (Revenue vs Expenses)
-                Expanded(
-                  flex: 2,
-                  child: Container(
-                    height: 400,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Cash Flow', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                            DropdownButton<String>(
-                              value: ref.watch(reportsTimeFilterProvider),
-                              underline: const SizedBox(),
-                              items: ['3 Months', '6 Months', '12 Months'].map((String value) {
-                                return DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value, style: const TextStyle(fontSize: 14)),
-                                );
-                              }).toList(),
-                              onChanged: (newValue) {
-                                if (newValue != null) {
-                                  ref.read(reportsTimeFilterProvider.notifier).setFilter(newValue);
-                                }
-                              },
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        Expanded(
-                          child: _CashFlowChart(monthlyData: reportsData.monthlyData),
-                        ),
-                      ],
-                    ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isDesktop = constraints.maxWidth > 800;
+                
+                Widget cashFlowChart = Container(
+                  height: 400,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
                   ),
-                ),
-                const SizedBox(width: 24),
-                // Pie Chart (Expenses Breakdown)
-                Expanded(
-                  flex: 1,
-                  child: Container(
-                    height: 400,
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Expenses Breakdown', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 24),
-                        Expanded(
-                          child: _ExpensePieChart(expensesByCategory: reportsData.expensesByCategory),
-                        ),
-                      ],
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Cash Flow', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                          DropdownButton<String>(
+                            value: ref.watch(reportsTimeFilterProvider),
+                            underline: const SizedBox(),
+                            items: ['3 Months', '6 Months', '12 Months'].map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text(value, style: const TextStyle(fontSize: 14)),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              if (newValue != null) {
+                                ref.read(reportsTimeFilterProvider.notifier).setFilter(newValue);
+                              }
+                            },
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      Expanded(
+                        child: _CashFlowChart(monthlyData: reportsData.monthlyData),
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                );
+
+                Widget expensePieChart = Container(
+                  height: 400,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Expenses Breakdown', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 24),
+                      Expanded(
+                        child: _ExpensePieChart(expensesByCategory: reportsData.expensesByCategory),
+                      ),
+                    ],
+                  ),
+                );
+
+                if (isDesktop) {
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 2, child: cashFlowChart),
+                      const SizedBox(width: 24),
+                      Expanded(flex: 1, child: expensePieChart),
+                    ],
+                  );
+                }
+
+                return Column(
+                  children: [
+                    cashFlowChart,
+                    const SizedBox(height: 24),
+                    expensePieChart,
+                  ],
+                );
+              }
             ),
           ],
         ),
@@ -326,25 +383,49 @@ class _KPICard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
         ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmall = constraints.maxWidth < 200;
+
+            if (isSmall) {
+              return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 14)),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+                    child: Icon(icon, color: color, size: 24),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 4),
-                  Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
-              ),
-            ),
-          ],
+              );
+            }
+
+            return Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+                  child: Icon(icon, color: color, size: 24),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

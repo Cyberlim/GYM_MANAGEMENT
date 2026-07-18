@@ -5,10 +5,40 @@ import 'package:gym_owner_web/features/trainers/providers/trainers_provider.dart
 import 'package:gym_owner_web/features/members/providers/members_provider.dart';
 import 'package:gym_owner_web/features/trainers/trainers_page.dart';
 import 'package:go_router/go_router.dart';
-
+import 'package:url_launcher/url_launcher.dart';
 class TrainerDetailsPage extends ConsumerWidget {
   final String trainerId;
   const TrainerDetailsPage({super.key, required this.trainerId});
+
+  void _showDocumentPreview(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(24),
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            InteractiveViewer(
+              minScale: 1.0,
+              maxScale: 5.0,
+              child: Image.network(url, fit: BoxFit.contain),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: CircleAvatar(
+                backgroundColor: Colors.black54,
+                child: IconButton(
+                  icon: const Icon(LucideIcons.x, color: Colors.white, size: 20),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   void _showFullImage(BuildContext context, dynamic trainer) {
     showDialog(
@@ -67,9 +97,12 @@ class TrainerDetailsPage extends ConsumerWidget {
           orElse: () => trainers.first,
         );
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        final isMobile = MediaQuery.of(context).size.width < 800;
+
+        return SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
         // Back Button
         Padding(
           padding: const EdgeInsets.only(left: 24.0, top: 24, bottom: 16),
@@ -90,60 +123,61 @@ class TrainerDetailsPage extends ConsumerWidget {
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Theme.of(context).dividerColor),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Flex(
+              direction: isMobile ? Axis.vertical : Axis.horizontal,
+              crossAxisAlignment: isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
               children: [
                 // Huge Profile Picture
                 GestureDetector(
                   onTap: () => _showFullImage(context, trainer),
                   child: Container(
                     width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                    image: trainer.imageUrl != null 
-                        ? DecorationImage(image: NetworkImage(trainer.imageUrl!), fit: BoxFit.cover)
+                    height: 140,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                      image: trainer.imageUrl != null 
+                          ? DecorationImage(image: NetworkImage(trainer.imageUrl!), fit: BoxFit.cover)
+                          : null,
+                    ),
+                    child: trainer.imageUrl == null
+                        ? Center(
+                            child: Text(
+                              trainer.name.isNotEmpty ? trainer.name[0].toUpperCase() : '?',
+                              style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 60, fontWeight: FontWeight.bold),
+                            ),
+                          )
                         : null,
                   ),
-                  child: trainer.imageUrl == null
-                      ? Center(
-                          child: Text(
-                            trainer.name.isNotEmpty ? trainer.name[0].toUpperCase() : '?',
-                            style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 60, fontWeight: FontWeight.bold),
-                          ),
-                        )
-                      : null,
                 ),
-                ),
-                const SizedBox(width: 32),
+                SizedBox(width: 32, height: 24),
                 
                 // Trainer Details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                Builder(builder: (context) {
+                  final details = Column(
+                    crossAxisAlignment: isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      Wrap(
+                        alignment: isMobile ? WrapAlignment.center : WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 16,
+                        runSpacing: 16,
                         children: [
                           Text(
                             trainer.name,
                             style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                            textAlign: isMobile ? TextAlign.center : TextAlign.left,
                           ),
-                          Row(
-                            children: [
-                              OutlinedButton.icon(
-                                onPressed: () {
-                                  showTrainerDialog(context, ref, trainerToEdit: trainer);
-                                },
-                                icon: const Icon(LucideIcons.edit3, size: 16),
-                                label: const Text('Edit Profile'),
-                              ),
-                            ],
-                          )
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              showTrainerDialog(context, ref, trainerToEdit: trainer);
+                            },
+                            icon: const Icon(LucideIcons.edit3, size: 16),
+                            label: const Text('Edit Profile'),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 16),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                         decoration: BoxDecoration(
@@ -156,32 +190,47 @@ class TrainerDetailsPage extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      Row(
+                      Wrap(
+                        alignment: isMobile ? WrapAlignment.center : WrapAlignment.start,
+                        spacing: 24,
+                        runSpacing: 12,
                         children: [
-                          Icon(LucideIcons.mail, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                          const SizedBox(width: 8),
-                          Text(trainer.email.isNotEmpty ? trainer.email : 'No email provided', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-                          const SizedBox(width: 24),
-                          Icon(LucideIcons.phone, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                          const SizedBox(width: 8),
-                          Text(trainer.phone.isNotEmpty ? trainer.phone : 'No phone provided', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(LucideIcons.mail, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                              const SizedBox(width: 8),
+                              Text(trainer.email.isNotEmpty ? trainer.email : 'No email provided', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                            ],
+                          ),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(LucideIcons.phone, size: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                              const SizedBox(width: 8),
+                              Text(trainer.phone.isNotEmpty ? trainer.phone : 'No phone provided', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                            ],
+                          ),
                         ],
                       ),
                       const SizedBox(height: 24),
                       
                       // Stats Row
-                      Row(
+                      Wrap(
+                        alignment: isMobile ? WrapAlignment.center : WrapAlignment.start,
+                        spacing: 32,
+                        runSpacing: 24,
                         children: [
                           _buildStatColumn(context, 'Rating', '${trainer.rating} / 5.0', LucideIcons.star, Colors.amber),
-                          const SizedBox(width: 48),
                           _buildStatColumn(context, 'Assigned Members', '${trainer.assignedMembers}', LucideIcons.users, Colors.blue),
-                          const SizedBox(width: 48),
                           _buildStatColumn(context, 'Experience', '${trainer.experienceYears} Years', LucideIcons.award, Colors.purple),
                         ],
                       ),
                     ],
-                  ),
-                ),
+                  );
+
+                  return isMobile ? details : Expanded(child: details);
+                }),
               ],
             ),
           ),
@@ -214,20 +263,71 @@ class TrainerDetailsPage extends ConsumerWidget {
                 trainer.certificates.isEmpty
                     ? Text('No certificates uploaded.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)))
                     : Wrap(
-                        spacing: 12,
-                        runSpacing: 12,
-                        children: trainer.certificates.map((cert) => Container(
-                          width: 120,
-                          height: 90,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: Theme.of(context).dividerColor),
-                            image: DecorationImage(
-                              image: NetworkImage(cert),
-                              fit: BoxFit.cover,
+                        spacing: 16,
+                        runSpacing: 16,
+                        children: trainer.certificates.map((cert) {
+                          return Container(
+                            width: 160,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Theme.of(context).dividerColor),
+                              color: Theme.of(context).colorScheme.surface,
                             ),
-                          ),
-                        )).toList(),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  height: 80,
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(8),
+                                    image: DecorationImage(
+                                      image: NetworkImage(cert),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text('Document', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).colorScheme.onSurface)),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    Tooltip(
+                                      message: 'Preview',
+                                      child: InkWell(
+                                        onTap: () => _showDocumentPreview(context, cert),
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Icon(LucideIcons.eye, size: 18, color: Theme.of(context).colorScheme.primary),
+                                        ),
+                                      ),
+                                    ),
+                                    Tooltip(
+                                      message: 'Download',
+                                      child: InkWell(
+                                        onTap: () async {
+                                          final url = Uri.parse(cert);
+                                          if (await canLaunchUrl(url)) {
+                                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                                          }
+                                        },
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Icon(LucideIcons.download, size: 18, color: Theme.of(context).colorScheme.primary),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
                       ),
               ],
             ),
@@ -301,13 +401,14 @@ class TrainerDetailsPage extends ConsumerWidget {
         ),
         const SizedBox(height: 32),
       ],
-    );
+    ));
       },
     );
   }
 
   Widget _buildStatColumn(BuildContext context, String label, String value, IconData icon, Color iconColor) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
           padding: const EdgeInsets.all(10),

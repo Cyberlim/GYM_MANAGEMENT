@@ -22,7 +22,7 @@ class _PaymentPageState extends State<PaymentPage> {
       body: Center(
         child: SingleChildScrollView(
           child: Container(
-            width: 500,
+            constraints: const BoxConstraints(maxWidth: 500),
             padding: const EdgeInsets.all(40),
             margin: const EdgeInsets.symmetric(vertical: 40),
             decoration: BoxDecoration(

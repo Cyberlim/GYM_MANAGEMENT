@@ -107,7 +107,7 @@ class _GymSetupPageState extends ConsumerState<GymSetupPage> {
       backgroundColor: const Color(0xFFF8FAFC),
       body: Center(
         child: Container(
-          width: 500,
+          constraints: const BoxConstraints(maxWidth: 500),
           padding: const EdgeInsets.all(40),
           decoration: BoxDecoration(
             color: Colors.white,
