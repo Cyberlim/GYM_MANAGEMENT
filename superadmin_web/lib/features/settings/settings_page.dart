@@ -4,6 +4,7 @@ import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/custom_text_field.dart';
 import '../../shared/widgets/primary_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../features/profile/profile_provider.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -39,7 +40,18 @@ class _SettingsPageState extends State<SettingsPage> with SingleTickerProviderSt
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Settings', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                  Row(
+                    children: [
+                      if (context.canPop()) ...[
+                        IconButton(
+                          icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),
+                          onPressed: () => context.pop(),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Text('Settings', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    ],
+                  ),
                   const SizedBox(height: 4),
                   Text('Manage platform configurations and preferences.', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                 ],

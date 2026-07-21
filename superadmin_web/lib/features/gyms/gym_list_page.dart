@@ -151,10 +151,16 @@ class _GymListPageState extends ConsumerState<GymListPage> {
           return gymMatches || ownerMatches;
         }).toList();
 
+        return LayoutBuilder(
+          builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 1000;
+        
         return CustomScrollView(
           slivers: [
             SliverToBoxAdapter(
-              child: Column(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (widget.showBackButton)
@@ -173,9 +179,20 @@ class _GymListPageState extends ConsumerState<GymListPage> {
                       ),
                     ),
                   // Header Row
-                  Text(
-                    widget.showBackButton ? '${widget.initialPlan ?? 'Plan'} Subscribers' : 'Gym Owners',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                  Row(
+                    children: [
+                      if (!widget.showBackButton && context.canPop()) ...[
+                        IconButton(
+                          icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),
+                          onPressed: () => context.pop(),
+                        ),
+                        const SizedBox(width: 8),
+                      ],
+                      Text(
+                        widget.showBackButton ? '${widget.initialPlan ?? 'Plan'} Subscribers' : 'Gym Owners',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -187,172 +204,269 @@ class _GymListPageState extends ConsumerState<GymListPage> {
                   const SizedBox(height: 24),
                 ],
               ),
-            ),
-            SliverAppBar(
-              floating: true,
-              snap: true,
-              automaticallyImplyLeading: false,
-              elevation: 0,
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Matches main layout background
-              toolbarHeight: 80, // Action bar + padding
-              flexibleSpace: FlexibleSpaceBar(
-                background: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    // Action Bar
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              SizedBox(
-                                width: 300,
-                              height: 40,
-                              child: TextField(
-                                onChanged: (val) => setState(() => _searchQuery = val),
-                                decoration: InputDecoration(
-                                  hintText: 'Search gyms or owners...',
-                                  hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 13),
-                                  prefixIcon: Icon(LucideIcons.search, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
-                                  filled: true,
-                                  fillColor: Theme.of(context).colorScheme.surface,
-                                  isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                    borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                                  ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                    borderSide: BorderSide(color: Theme.of(context).dividerColor),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(6),
-                                    borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
-                                  ),
-                                ),
-                                style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            _buildDropdown('Status', _selectedStatus, ['All', 'Active', 'Pending', 'Suspended'], (val) => setState(() => _selectedStatus = val!)),
-                            if (!widget.showBackButton) ...[
-                              const SizedBox(width: 12),
-                              _buildDropdown('Plan', _selectedPlan, ['All', 'Basic', 'Pro', 'Enterprise'], (val) => setState(() => _selectedPlan = val!)),
-                            ],
-                          ],
-                        ),
-                        if (!widget.showBackButton)
-                          ElevatedButton.icon(
-                            onPressed: _showAddGymOwnerDialog,
-                            icon: Icon(LucideIcons.plus, size: 16),
-                            label: Text('Add Gym Owner', style: TextStyle(fontWeight: FontWeight.bold)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
-                              foregroundColor: Colors.white,
-                              elevation: 0,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          ),
-                      ],
-                    ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
               ),
             ),
-            SliverPersistentHeader(
-              pinned: true,
-              delegate: _StickyHeaderDelegate(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).scaffoldBackgroundColor,
-                    borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
-                    border: Border(
-                      top: BorderSide(color: Colors.grey.withOpacity(0.1)),
-                      left: BorderSide(color: Colors.grey.withOpacity(0.1)),
-                      right: BorderSide(color: Colors.grey.withOpacity(0.1)),
-                      bottom: BorderSide(color: Colors.grey.withOpacity(0.1)),
-                    ),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-                  child: Row(
+            if (!isMobile)
+              SliverAppBar(
+                floating: true,
+                snap: true,
+                automaticallyImplyLeading: false,
+                elevation: 0,
+                backgroundColor: Theme.of(context).scaffoldBackgroundColor, // Matches main layout background
+                toolbarHeight: 80, // Action bar + padding
+                flexibleSpace: FlexibleSpaceBar(
+                  background: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Expanded(flex: 3, child: Text('GYM', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Theme.of(context).colorScheme.onSurface, letterSpacing: 0.5))),
-                      Expanded(flex: 3, child: Text('OWNER', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Theme.of(context).colorScheme.onSurface, letterSpacing: 0.5))),
-                      Expanded(flex: 1, child: Center(child: Text('PLAN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Theme.of(context).colorScheme.onSurface, letterSpacing: 0.5)))),
-                      Expanded(flex: 1, child: Center(child: Text('STATUS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Theme.of(context).colorScheme.onSurface, letterSpacing: 0.5)))),
-                      Expanded(flex: 2, child: Align(alignment: Alignment.center, child: Text('REVENUE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Theme.of(context).colorScheme.onSurface, letterSpacing: 0.5)))),
-                      SizedBox(width: 80, child: Text('ACTIONS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Theme.of(context).colorScheme.onSurface, letterSpacing: 0.5), textAlign: TextAlign.center)),
+                      // Action Bar
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                SizedBox(
+                                  width: 300,
+                                height: 40,
+                                child: TextField(
+                                  onChanged: (val) => setState(() => _searchQuery = val),
+                                  decoration: InputDecoration(
+                                    hintText: 'Search gyms or owners...',
+                                    hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 13),
+                                    prefixIcon: Icon(LucideIcons.search, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+                                    filled: true,
+                                    fillColor: Theme.of(context).colorScheme.surface,
+                                    isDense: true,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                      borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(6),
+                                      borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
+                                    ),
+                                  ),
+                                  style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              _buildDropdown('Status', _selectedStatus, ['All', 'Active', 'Pending', 'Suspended'], (val) => setState(() => _selectedStatus = val!)),
+                              if (!widget.showBackButton) ...[
+                                const SizedBox(width: 12),
+                                _buildDropdown('Plan', _selectedPlan, ['All', 'Basic', 'Pro', 'Enterprise'], (val) => setState(() => _selectedPlan = val!)),
+                              ],
+                            ],
+                          ),
+                          if (!widget.showBackButton)
+                            ElevatedButton.icon(
+                              onPressed: _showAddGymOwnerDialog,
+                              icon: Icon(LucideIcons.plus, size: 16),
+                              label: Text('Add Gym Owner', style: TextStyle(fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                                foregroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                        ],
+                      ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  ),
+                ),
+              )
+            else
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 24.0, left: 24.0, right: 24.0),
+                  child: Wrap(
+                    spacing: 16,
+                    runSpacing: 16,
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 300,
+                            height: 40,
+                            child: TextField(
+                              onChanged: (val) => setState(() => _searchQuery = val),
+                              decoration: InputDecoration(
+                                hintText: 'Search gyms or owners...',
+                                hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 13),
+                                prefixIcon: Icon(LucideIcons.search, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+                                filled: true,
+                                fillColor: Theme.of(context).colorScheme.surface,
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: BorderSide(color: Theme.of(context).dividerColor),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(6),
+                                  borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4)),
+                                ),
+                              ),
+                              style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
+                            ),
+                          ),
+                          _buildDropdown('Status', _selectedStatus, ['All', 'Active', 'Pending', 'Suspended'], (val) => setState(() => _selectedStatus = val!)),
+                          if (!widget.showBackButton)
+                            _buildDropdown('Plan', _selectedPlan, ['All', 'Basic', 'Pro', 'Enterprise'], (val) => setState(() => _selectedPlan = val!)),
+                        ],
+                      ),
+                      if (!widget.showBackButton)
+                        ElevatedButton.icon(
+                          onPressed: _showAddGymOwnerDialog,
+                          icon: Icon(LucideIcons.plus, size: 16),
+                          label: Text('Add Gym Owner', style: TextStyle(fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.primaryColor,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
                     ],
                   ),
                 ),
               ),
-            ),
-            if (filteredGyms.isEmpty)
-              SliverToBoxAdapter(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
-                    border: Border(
-                      left: BorderSide(color: Theme.of(context).dividerColor!),
-                      right: BorderSide(color: Theme.of(context).dividerColor!),
-                      bottom: BorderSide(color: Theme.of(context).dividerColor!),
+
+            // TABLE DESKTOP
+            if (!isMobile) ...[
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _StickyHeaderDelegate(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).scaffoldBackgroundColor,
+                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(16), topRight: Radius.circular(16)),
+                      border: Border(
+                        top: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                        left: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                        right: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                        bottom: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                      ),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                    child: Row(
+                      children: [
+                        Expanded(flex: 3, child: Text('GYM', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Theme.of(context).colorScheme.onSurface, letterSpacing: 0.5))),
+                        Expanded(flex: 3, child: Text('OWNER', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Theme.of(context).colorScheme.onSurface, letterSpacing: 0.5))),
+                        Expanded(flex: 1, child: Center(child: Text('PLAN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Theme.of(context).colorScheme.onSurface, letterSpacing: 0.5)))),
+                        Expanded(flex: 1, child: Center(child: Text('STATUS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Theme.of(context).colorScheme.onSurface, letterSpacing: 0.5)))),
+                        Expanded(flex: 2, child: Align(alignment: Alignment.center, child: Text('REVENUE', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Theme.of(context).colorScheme.onSurface, letterSpacing: 0.5)))),
+                        SizedBox(width: 80, child: Text('ACTIONS', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Theme.of(context).colorScheme.onSurface, letterSpacing: 0.5), textAlign: TextAlign.center)),
+                      ],
                     ),
                   ),
-                  padding: const EdgeInsets.all(32.0),
-                  child: const Center(child: Text('No gyms found matching your search.', style: TextStyle(color: Colors.grey))),
-                ),
-              )
-            else
-              SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final gym = filteredGyms[index];
-                    final isLast = index == filteredGyms.length - 1;
-                    return Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: isLast ? const BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)) : null,
-                        border: Border(
-                          left: BorderSide(color: Colors.grey.withOpacity(0.1)),
-                          right: BorderSide(color: Colors.grey.withOpacity(0.1)),
-                          bottom: isLast ? BorderSide(color: Colors.grey.withOpacity(0.1)) : BorderSide.none,
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          _buildTableRow(
-                            context, 
-                            gym['id'].toString(),
-                            gym['initials'] ?? 'G', 
-                            gym['gymName'] ?? 'Unknown', 
-                            gym['location'] ?? 'Unknown', 
-                            gym['ownerName'] ?? 'Unknown', 
-                            gym['email'] ?? 'Unknown', 
-                            gym['plan'] ?? 'Basic', 
-                            gym['status'] ?? 'Pending', 
-                            gym['revenue'] ?? '0', 
-                            _searchQuery,
-                          ),
-                          if (!isLast) Divider(height: 1),
-                        ],
-                      ),
-                    );
-                  },
-                  childCount: filteredGyms.length,
                 ),
               ),
+              if (filteredGyms.isEmpty)
+                SliverToBoxAdapter(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(12), bottomRight: Radius.circular(12)),
+                      border: Border(
+                        left: BorderSide(color: Theme.of(context).dividerColor!),
+                        right: BorderSide(color: Theme.of(context).dividerColor!),
+                        bottom: BorderSide(color: Theme.of(context).dividerColor!),
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(32.0),
+                    child: const Center(child: Text('No gyms found matching your search.', style: TextStyle(color: Colors.grey))),
+                  ),
+                )
+              else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final gym = filteredGyms[index];
+                      final isLast = index == filteredGyms.length - 1;
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: isLast ? const BorderRadius.only(bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)) : null,
+                          border: Border(
+                            left: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                            right: BorderSide(color: Colors.grey.withOpacity(0.1)),
+                            bottom: isLast ? BorderSide(color: Colors.grey.withOpacity(0.1)) : BorderSide.none,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            _buildTableRow(
+                              context, 
+                              gym['id'].toString(),
+                              gym['initials'] ?? 'G', 
+                              gym['gymName'] ?? 'Unknown', 
+                              gym['location'] ?? 'Unknown', 
+                              gym['ownerName'] ?? 'Unknown', 
+                              gym['email'] ?? 'Unknown', 
+                              gym['plan'] ?? 'Basic', 
+                              gym['status'] ?? 'Pending', 
+                              gym['revenue'] ?? '0', 
+                              _searchQuery,
+                            ),
+                            if (!isLast) Divider(height: 1),
+                          ],
+                        ),
+                      );
+                    },
+                    childCount: filteredGyms.length,
+                  ),
+                ),
+            ] else ...[
+              // MOBILE CARDS
+              if (filteredGyms.isEmpty)
+                SliverToBoxAdapter(
+                  child: Container(
+                    padding: const EdgeInsets.all(32.0),
+                    child: const Center(child: Text('No gyms found matching your search.', style: TextStyle(color: Colors.grey))),
+                  ),
+                )
+              else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) {
+                      final gym = filteredGyms[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                        child: _buildMobileCard(context, gym),
+                      );
+                    },
+                    childCount: filteredGyms.length,
+                  ),
+                ),
+            ]
           ],
         );
       },
     );
+      },
+    );
   }
+
 
   Widget _buildDropdown(String label, String value, List<String> options, ValueChanged<String?> onChanged) {
     return Container(
@@ -527,6 +641,119 @@ class _GymListPageState extends ConsumerState<GymListPage> {
           color: isActive ? Theme.of(context).colorScheme.surface : Theme.of(context).colorScheme.onSurface,
           fontSize: 13,
           fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+    );
+  }
+  Widget _buildMobileCard(BuildContext context, Map<String, dynamic> gym) {
+    Color planBg;
+    Color planText;
+    final plan = gym['plan'] ?? 'Basic';
+    final normalizedPlan = plan.replaceAll(' Plan', '').toLowerCase();
+    if (normalizedPlan == 'pro') {
+      planBg = const Color(0xFFD3E2FF);
+      planText = const Color(0xFF0055FF);
+    } else if (normalizedPlan == 'enterprise') {
+      planBg = const Color(0xFFE0E7FF);
+      planText = const Color(0xFF4338CA);
+    } else if (normalizedPlan == 'basic') {
+      planBg = const Color(0xFFF3E8FF);
+      planText = const Color(0xFF7E22CE);
+    } else {
+      planBg = const Color(0xFFFEF3C7);
+      planText = const Color(0xFFB45309);
+    }
+
+    final status = gym['status'] ?? 'Pending';
+    Color statusColor = status == 'Active' ? Colors.green : (status == 'Pending' ? Colors.orange : Colors.red);
+
+    return InkWell(
+      onTap: () {
+        context.go('/gyms/${Uri.encodeComponent(gym['id'].toString())}');
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Theme.of(context).dividerColor),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Center(
+                    child: Text(gym['initials'] ?? 'G', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).colorScheme.primary)),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(gym['gymName'] ?? 'Unknown', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                      const SizedBox(height: 4),
+                      Text(gym['ownerName'] ?? 'Unknown', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                    ],
+                  ),
+                ),
+                Icon(LucideIcons.chevronRight, size: 20, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.4)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('PLAN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: planBg,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(plan, style: TextStyle(fontSize: 12, color: planText, fontWeight: FontWeight.w600)),
+                    ),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('REVENUE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                    const SizedBox(height: 4),
+                    Text(gym['revenue'] ?? '0', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text('STATUS', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: statusColor)),
+                        const SizedBox(width: 6),
+                        Text(status, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );

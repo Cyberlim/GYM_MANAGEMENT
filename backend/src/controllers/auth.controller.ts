@@ -724,6 +724,38 @@ export const sendFallback2FA = async (req: Request, res: Response): Promise<void
   }
 };
 
+export const checkEmail2FA = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      res.status(400).json({ message: 'Email is required' });
+      return;
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      // Return 200 with false instead of 404 to prevent user enumeration
+      res.json({ is2FAEnabled: false });
+      return;
+    }
+
+    if (user.settings?.twoFactorEnabled && user.twoFactorMethod !== 'none') {
+      res.json({
+        is2FAEnabled: true,
+        userId: user.id,
+        method: user.twoFactorMethod,
+      });
+    } else {
+      res.json({
+        is2FAEnabled: false,
+      });
+    }
+  } catch (error: any) {
+    console.error('Check Email 2FA Error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const getActiveSessions = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const userId = req.user?._id;

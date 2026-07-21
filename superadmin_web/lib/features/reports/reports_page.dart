@@ -108,82 +108,194 @@ class _ReportsPageState extends State<ReportsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Reports', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                const SizedBox(height: 4),
-                Text('Generate and download platform data reports.', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
-                const SizedBox(height: 32),
-                
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 800;
+        
+        return CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Generate Reports', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                    Container(
-                      height: 40,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        border: Border.all(color: Theme.of(context).dividerColor),
-                        borderRadius: BorderRadius.circular(6),
+                    Text('Reports', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 4),
+                    Text('Generate and download platform data reports.', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+                    const SizedBox(height: 32),
+                    
+                    if (isMobile)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Generate Reports', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                          const SizedBox(height: 12),
+                          Container(
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              border: Border.all(color: Theme.of(context).dividerColor),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                isExpanded: true,
+                                value: _selectedDateRange,
+                                icon: const Icon(LucideIcons.chevronDown, size: 16),
+                                style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
+                                onChanged: (val) {
+                                  if (val != null) setState(() => _selectedDateRange = val);
+                                },
+                                items: ['Last 7 Days', 'Last 30 Days', 'This Month', 'Last Month', 'This Year']
+                                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                                    .toList(),
+                              ),
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Generate Reports', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                          Container(
+                            height: 40,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              border: Border.all(color: Theme.of(context).dividerColor),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton<String>(
+                                value: _selectedDateRange,
+                                icon: const Icon(LucideIcons.chevronDown, size: 16),
+                                style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
+                                onChanged: (val) {
+                                  if (val != null) setState(() => _selectedDateRange = val);
+                                },
+                                items: ['Last 7 Days', 'Last 30 Days', 'This Month', 'Last Month', 'This Year']
+                                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                                    .toList(),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: _selectedDateRange,
-                          icon: const Icon(LucideIcons.chevronDown, size: 16),
-                          style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
-                          onChanged: (val) {
-                            if (val != null) setState(() => _selectedDateRange = val);
-                          },
-                          items: ['Last 7 Days', 'Last 30 Days', 'This Month', 'Last Month', 'This Year']
-                              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                              .toList(),
-                        ),
+                    const SizedBox(height: 24),
+                    
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: isMobile ? 1 : 2,
+                        childAspectRatio: isMobile ? 1.8 : 2.5,
+                        crossAxisSpacing: 24,
+                        mainAxisSpacing: 24,
                       ),
+                      itemCount: _reportTypes.length,
+                      itemBuilder: (context, index) {
+                        final report = _reportTypes[index];
+                        return _buildReportCard(
+                          report['title'],
+                          report['description'],
+                          report['icon'],
+                          report['color'],
+                        );
+                      },
                     ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    childAspectRatio: 2.5,
-                    crossAxisSpacing: 24,
-                    mainAxisSpacing: 24,
-                  ),
-                  itemCount: _reportTypes.length,
-                  itemBuilder: (context, index) {
-                    final report = _reportTypes[index];
-                    return _buildReportCard(
-                      report['title'],
-                      report['description'],
-                      report['icon'],
-                      report['color'],
-                    );
-                  },
-                ),
-                
-                const SizedBox(height: 48),
-                Text('Recent Reports', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                const SizedBox(height: 24),
-                
-                _recentReports.isEmpty
-                    ? Center(
+                    
+                    const SizedBox(height: 48),
+                    Text('Recent Reports', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(height: 24),
+                    
+                    if (_recentReports.isEmpty)
+                      Center(
                         child: Padding(
                           padding: const EdgeInsets.all(32.0),
                           child: Text('No reports generated yet.', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
                         ),
                       )
-                    : DataTableWidget(
+                    else if (isMobile)
+                      ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: _recentReports.length,
+                        itemBuilder: (context, index) {
+                          final report = _recentReports[index];
+                          Color typeColor;
+                          switch (report['type']) {
+                            case 'Financial': typeColor = Colors.green; break;
+                            case 'Gym': typeColor = const Color(0xFF3B82F6); break;
+                            case 'Subscription': typeColor = Colors.orange; break;
+                            case 'Payouts': typeColor = const Color(0xFF4338CA); break;
+                            default: typeColor = Colors.grey; break;
+                          }
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 16),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.surface,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Theme.of(context).dividerColor),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(child: Text(report['name'], style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface))),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: typeColor.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(report['type'], style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: typeColor)),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('DATE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                                        const SizedBox(height: 4),
+                                        Text(report['date'], style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8))),
+                                      ],
+                                    ),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('SIZE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                                        const SizedBox(height: 4),
+                                        Text(report['size'], style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.8))),
+                                      ],
+                                    ),
+                                    TextButton.icon(
+                                      onPressed: () {},
+                                      icon: const Icon(LucideIcons.download, size: 16),
+                                      label: const Text('Downloaded'),
+                                      style: TextButton.styleFrom(
+                                        foregroundColor: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      )
+                    else
+                      DataTableWidget(
                         columns: const ['Report Name', 'Type', 'Date Generated', 'File Size', 'Actions'],
                         rows: _recentReports.map((report) {
                           Color typeColor;
@@ -217,11 +329,13 @@ class _ReportsPageState extends State<ReportsPage> {
                           ];
                         }).toList(),
                       ),
-              ],
+                  ],
+                ),
+              ),
             ),
-          ),
-        ),
-      ],
+          ],
+        );
+      },
     );
   }
 

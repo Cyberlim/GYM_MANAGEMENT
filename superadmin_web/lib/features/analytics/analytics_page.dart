@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import 'package:responsive_builder/responsive_builder.dart';
 import 'package:intl/intl.dart';
@@ -46,7 +47,18 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Analytics Overview', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                      Row(
+                        children: [
+                          if (context.canPop()) ...[
+                            IconButton(
+                              icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),
+                              onPressed: () => context.pop(),
+                            ),
+                            const SizedBox(width: 8),
+                          ],
+                          Text('Analytics Overview', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                        ],
+                      ),
                       const SizedBox(height: 4),
                       Text('Platform growth and performance metrics.', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
                       const SizedBox(height: 24),
@@ -250,11 +262,14 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            runSpacing: 16,
             children: [
               Text('Revenue Overview', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-              Row(
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   _buildTimeFilter('1W'),
                   _buildTimeFilter('1M'),
@@ -265,6 +280,7 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
                   InkWell(
                     onTap: () {},
                     child: Row(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(LucideIcons.upload, size: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                         const SizedBox(width: 6),
@@ -369,13 +385,13 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
             ),
           ),
           const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12,
+            runSpacing: 12,
             children: [
               _buildStatChip('Total', totalStr),
-              const SizedBox(width: 12),
               _buildStatChip('Growth', growth, isPositive: true),
-              const SizedBox(width: 12),
               _buildStatChip('Avg', avgStr),
             ],
           ),
@@ -486,16 +502,16 @@ class _AnalyticsPageState extends ConsumerState<AnalyticsPage> {
             ),
           ),
           const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 16,
+            runSpacing: 16,
             children: [
               _buildLegend(Colors.orange, 'Basic'),
-              const SizedBox(width: 16),
               _buildLegend(const Color(0xFF16A34A), 'Pro'),
-              const SizedBox(width: 16),
               _buildLegend(const Color(0xFF4338CA), 'Enterprise'),
             ],
-          )
+          ),
         ],
       ),
     );

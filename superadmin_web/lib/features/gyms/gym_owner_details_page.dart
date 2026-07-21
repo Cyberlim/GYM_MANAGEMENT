@@ -34,6 +34,7 @@ class GymOwnerDetailsPage extends ConsumerWidget {
         final DateTime regDate = DateTime.tryParse(regDateStr) ?? DateTime.now();
         final joinedText = 'Joined: ${regDate.month}/${regDate.day}/${regDate.year}';
         final imageUrl = gym['imageUrl'] as String?;
+        final isMobile = MediaQuery.of(context).size.width < 800;
 
     return SingleChildScrollView(
       child: Column(
@@ -65,8 +66,9 @@ class GymOwnerDetailsPage extends ConsumerWidget {
                 BoxShadow(color: Theme.of(context).shadowColor.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
               ],
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Flex(
+              direction: isMobile ? Axis.vertical : Axis.horizontal,
+              crossAxisAlignment: isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
               children: [
                 // Avatar
                 GestureDetector(
@@ -110,14 +112,15 @@ class GymOwnerDetailsPage extends ConsumerWidget {
                       : Icon(LucideIcons.user, size: 48, color: AppTheme.primaryColor),
                   ),
                 ),
-                const SizedBox(width: 24),
+                SizedBox(height: isMobile ? 24 : 0, width: isMobile ? 0 : 24),
                 // Details
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                if (isMobile)
+                  Column(
+                    crossAxisAlignment: isMobile ? CrossAxisAlignment.center : CrossAxisAlignment.start,
                     children: [
                       Text(
                         gymName,
+                        textAlign: isMobile ? TextAlign.center : TextAlign.start,
                         style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
                       ),
                       const SizedBox(height: 8),
@@ -126,19 +129,42 @@ class GymOwnerDetailsPage extends ConsumerWidget {
                         style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurface),
                       ),
                       const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Icon(LucideIcons.mail, size: 16, color: Colors.grey),
-                          const SizedBox(width: 8),
-                          Text(email, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
-                          const SizedBox(width: 24),
-                          Icon(LucideIcons.phone, size: 16, color: Colors.grey),
-                          const SizedBox(width: 8),
-                          Text(phone, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
-                        ],
-                      ),
+                      isMobile 
+                        ? Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(LucideIcons.mail, size: 16, color: Colors.grey),
+                                  const SizedBox(width: 8),
+                                  Text(email, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(LucideIcons.phone, size: 16, color: Colors.grey),
+                                  const SizedBox(width: 8),
+                                  Text(phone, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
+                                ],
+                              ),
+                            ],
+                          )
+                        : Row(
+                            children: [
+                              Icon(LucideIcons.mail, size: 16, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Text(email, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
+                              const SizedBox(width: 24),
+                              Icon(LucideIcons.phone, size: 16, color: Colors.grey),
+                              const SizedBox(width: 8),
+                              Text(phone, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
+                            ],
+                          ),
                       const SizedBox(height: 16),
                       Row(
+                        mainAxisAlignment: isMobile ? MainAxisAlignment.center : MainAxisAlignment.start,
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -154,8 +180,52 @@ class GymOwnerDetailsPage extends ConsumerWidget {
                       )
                     ],
                   ),
-                ),
+                if (!isMobile)
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          gymName,
+                          style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Owner: $ownerName',
+                          style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurface),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(LucideIcons.mail, size: 16, color: Colors.grey),
+                            const SizedBox(width: 8),
+                            Text(email, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
+                            const SizedBox(width: 24),
+                            Icon(LucideIcons.phone, size: 16, color: Colors.grey),
+                            const SizedBox(width: 8),
+                            Text(phone, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: status == 'Active' ? Colors.green.withOpacity(0.1) : (status == 'Pending' ? Colors.orange.withOpacity(0.1) : Colors.red.withOpacity(0.1)),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(status, style: TextStyle(color: status == 'Active' ? Colors.green : (status == 'Pending' ? Colors.orange : Colors.red), fontWeight: FontWeight.bold, fontSize: 10)),
+                            ),
+                            const SizedBox(width: 12),
+                            Text(joinedText, style: TextStyle(color: Colors.grey, fontSize: 12)),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
                 // Action Buttons
+                SizedBox(height: isMobile ? 24 : 0),
                 Column(
                   children: [
                     if (gym['userStatus'] != 'suspended')
@@ -202,13 +272,13 @@ class GymOwnerDetailsPage extends ConsumerWidget {
           const SizedBox(height: 24),
 
           // Lower Section (Stats and Recent Activity)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Flex(
+            direction: isMobile ? Axis.vertical : Axis.horizontal,
+            crossAxisAlignment: isMobile ? CrossAxisAlignment.stretch : CrossAxisAlignment.start,
             children: [
               // Stats
-              Expanded(
-                flex: 1,
-                child: Container(
+              if (isMobile)
+                Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
@@ -232,12 +302,38 @@ class GymOwnerDetailsPage extends ConsumerWidget {
                     ],
                   ),
                 ),
-              ),
-              const SizedBox(width: 24),
+              if (!isMobile)
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(color: Theme.of(context).shadowColor.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Gym Statistics', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                        const SizedBox(height: 24),
+                        _buildStatRow(LucideIcons.users, 'Total Members', '${gym['stats']?['totalMembers'] ?? 0}'),
+                        const Divider(height: 32),
+                        _buildStatRow(LucideIcons.dollarSign, 'Monthly Revenue', gym['stats']?['monthlyRevenue'] ?? '\$0'),
+                        const Divider(height: 32),
+                        _buildStatRow(LucideIcons.creditCard, 'Current Plan', plan),
+                        const Divider(height: 32),
+                        _buildStatRow(LucideIcons.trendingUp, 'Growth (MoM)', gym['stats']?['growth'] ?? '+0%'),
+                      ],
+                    ),
+                  ),
+                ),
+              SizedBox(height: isMobile ? 24 : 0, width: isMobile ? 0 : 24),
               // Activity
-              Expanded(
-                flex: 2,
-                child: Container(
+              if (isMobile)
+                Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
                     color: Theme.of(context).colorScheme.surface,
@@ -251,14 +347,52 @@ class GymOwnerDetailsPage extends ConsumerWidget {
                     children: [
                       Text('Recent Activity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                       const SizedBox(height: 24),
-                      _buildActivityItem('Updated billing information', '2 hours ago', LucideIcons.creditCard),
-                      _buildActivityItem('Added 15 new members', 'Yesterday', LucideIcons.users),
-                      _buildActivityItem('Upgraded to Pro Plan', 'Last week', LucideIcons.arrowUpCircle),
-                      _buildActivityItem('Account created', 'Sept 10, 2024', LucideIcons.userPlus),
+                      if (gym['recentActivity'] != null && (gym['recentActivity'] as List).isNotEmpty)
+                        ...(gym['recentActivity'] as List).map((a) {
+                          IconData iconData = LucideIcons.activity;
+                          if (a['icon'] == 'userPlus') iconData = LucideIcons.userPlus;
+                          else if (a['icon'] == 'creditCard') iconData = LucideIcons.creditCard;
+                          else if (a['icon'] == 'users') iconData = LucideIcons.users;
+                          
+                          return _buildActivityItem(a['title'] ?? 'Activity', a['date'] ?? '', iconData);
+                        })
+                      else
+                        const Text('No recent activity', style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                 ),
-              )
+              if (!isMobile)
+                Expanded(
+                  flex: 2,
+                  child: Container(
+                    padding: const EdgeInsets.all(24),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(color: Theme.of(context).shadowColor.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Recent Activity', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                        const SizedBox(height: 24),
+                        if (gym['recentActivity'] != null && (gym['recentActivity'] as List).isNotEmpty)
+                          ...(gym['recentActivity'] as List).map((a) {
+                            IconData iconData = LucideIcons.activity;
+                            if (a['icon'] == 'userPlus') iconData = LucideIcons.userPlus;
+                            else if (a['icon'] == 'creditCard') iconData = LucideIcons.creditCard;
+                            else if (a['icon'] == 'users') iconData = LucideIcons.users;
+                            
+                            return _buildActivityItem(a['title'] ?? 'Activity', a['date'] ?? '', iconData);
+                          })
+                        else
+                          const Text('No recent activity', style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                )
             ],
           ),
           const SizedBox(height: 24),

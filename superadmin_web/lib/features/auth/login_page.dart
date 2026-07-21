@@ -27,7 +27,6 @@ class _LoginPageState extends State<LoginPage> {
   bool _rememberMe = false;
   bool _is2FAStep = false;
   String? _userIdFor2FA;
-  bool _isFallbackMode = false;
   String? _2faMethod;
 
   final List<String> _backgroundImages = [
@@ -59,7 +58,6 @@ class _LoginPageState extends State<LoginPage> {
       });
     }
   }
-
   @override
   void dispose() {
     _emailController.dispose();
@@ -67,6 +65,8 @@ class _LoginPageState extends State<LoginPage> {
     _timer?.cancel();
     super.dispose();
   }
+
+
 
   Future<void> _login() async {
     setState(() {
@@ -137,33 +137,6 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<void> _requestFallbackOTP() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    try {
-      final response = await http.post(
-        Uri.parse('${Env.apiUrl}/auth/send-fallback-2fa'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'userId': _userIdFor2FA}),
-      );
-      if (response.statusCode == 200) {
-        setState(() {
-          _isFallbackMode = true;
-          _errorMessage = 'An OTP has been sent to your email.';
-        });
-      } else {
-        final data = jsonDecode(response.body);
-        setState(() => _errorMessage = data['message'] ?? 'Failed to send OTP.');
-      }
-    } catch (e) {
-      setState(() => _errorMessage = 'Network error: $e');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
   Future<void> _verify2FA() async {
     setState(() {
       _isLoading = true;
@@ -210,8 +183,25 @@ class _LoginPageState extends State<LoginPage> {
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
-      body: Row(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
+          // Background Carousel for Mobile
+          if (!isDesktop)
+            AnimatedSwitcher(
+              duration: const Duration(seconds: 1),
+              child: Container(
+                key: ValueKey<int>(_currentImageIndex),
+                decoration: BoxDecoration(
+                  image: DecorationImage(
+                    image: NetworkImage(_backgroundImages[_currentImageIndex]),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+          Row(
+            children: [
           // Left Side - Branding with Image Carousel
           if (isDesktop)
             Expanded(
@@ -287,9 +277,10 @@ class _LoginPageState extends State<LoginPage> {
           // Right Side - Login Form
           Expanded(
             child: Container(
-              color: Theme.of(context).colorScheme.surface,
+              color: isDesktop ? Theme.of(context).colorScheme.surface : Colors.transparent,
               child: Center(
-                child: TweenAnimationBuilder<double>(
+                child: SingleChildScrollView(
+                  child: TweenAnimationBuilder<double>(
                   tween: Tween<double>(begin: 0.8, end: 1.0),
                   duration: const Duration(milliseconds: 800),
                   curve: Curves.easeOutCubic,
@@ -306,7 +297,7 @@ class _LoginPageState extends State<LoginPage> {
                     width: 440,
                     padding: const EdgeInsets.all(48),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
+                      color: Theme.of(context).colorScheme.surface.withOpacity(isDesktop ? 1.0 : 0.75),
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
                         BoxShadow(
@@ -360,7 +351,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         
                         if (_is2FAStep) ...[
-                          Text(_isFallbackMode ? 'Enter Email OTP Code' : 'Enter Authenticator App Code', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          Text(_2faMethod == 'email' ? 'Enter Email OTP Code' : 'Enter Authenticator App Code', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                           const SizedBox(height: 8),
                           TextField(
                             controller: _otpController,
@@ -384,17 +375,11 @@ class _LoginPageState extends State<LoginPage> {
                               TextButton(
                                 onPressed: () => setState(() {
                                   _is2FAStep = false;
-                                  _isFallbackMode = false;
                                   _errorMessage = null;
                                   _otpController.clear();
                                 }),
                                 child: const Text('Back to Login', style: TextStyle(color: Color(0xFF10B981))),
                               ),
-                              if (!_isFallbackMode && _2faMethod == 'app')
-                                TextButton(
-                                  onPressed: _requestFallbackOTP,
-                                  child: const Text('Try another way', style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold)),
-                                ),
                             ],
                           ),
                         ] else ...[
@@ -519,8 +504,11 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
+    ),
+  ],
+),
     );
   }
 }

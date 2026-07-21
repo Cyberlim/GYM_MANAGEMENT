@@ -217,9 +217,49 @@ export const getGymDetails = async (req: AuthRequest, res: Response): Promise<vo
     
     // Fetch related data
     const objectId = new mongoose.Types.ObjectId(id as string);
-    const members = await Member.find({ gymId: objectId }).select('name membershipPlan status joinDate expiryDate email').lean();
-    const trainers = await Trainer.find({ gymId: objectId }).select('name specialization email status').lean();
-    const staff = await Staff.find({ gymId: objectId }).select('name role email status').lean();
+    const members = await Member.find({ gymId: objectId }).select('name membershipPlan status joinDate expiryDate email createdAt').lean();
+    const trainers = await Trainer.find({ gymId: objectId }).select('name specialization email status createdAt').lean();
+    const staff = await Staff.find({ gymId: objectId }).select('name role email status createdAt').lean();
+    const payments = await Payment.find({ gymId: objectId }).sort({ date: -1 }).limit(5).lean();
+
+    // Aggregate recent activity
+    const recentActivity = [];
+    
+    // Add gym creation
+    recentActivity.push({
+      id: 'gym_created',
+      title: 'Account created',
+      date: gym.createdAt || owner?.createdAt || new Date(),
+      icon: 'userPlus'
+    });
+
+    // Add recent payments
+    payments.forEach((p: any) => {
+      recentActivity.push({
+        id: `payment_${p._id}`,
+        title: `Payment of $${p.amount} received`,
+        date: p.date || p.createdAt,
+        icon: 'creditCard'
+      });
+    });
+
+    // Add recent members (last 5)
+    const recentMembers = [...members].sort((a: any, b: any) => 
+      new Date(b.joinDate || b.createdAt || 0).getTime() - new Date(a.joinDate || a.createdAt || 0).getTime()
+    ).slice(0, 5);
+    
+    recentMembers.forEach((m: any) => {
+      recentActivity.push({
+        id: `member_${m._id}`,
+        title: `Added new member: ${m.name}`,
+        date: m.joinDate || m.createdAt,
+        icon: 'users'
+      });
+    });
+
+    // Sort all activities by date descending
+    recentActivity.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
 
     res.status(200).json({
       id: gym._id,
@@ -257,6 +297,10 @@ export const getGymDetails = async (req: AuthRequest, res: Response): Promise<vo
         role: s.role || 'Staff',
         email: s.email || 'N/A',
         status: (s as any).status || 'Active'
+      })),
+      recentActivity: recentActivity.slice(0, 10).map(a => ({
+        ...a,
+        date: new Date(a.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
       }))
     });
   } catch (error: any) {
@@ -382,12 +426,15 @@ export const suspendGymOwner = async (req: AuthRequest, res: Response): Promise<
 export const getGymOwnersList = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     if (!checkSuperadmin(req, res)) return;
-    const gymOwners = await User.find({ role: 'gym_owner' }).select('name email');
+    const gymOwners = await User.find({ role: 'gym_owner' }).select('name email status');
     const ownersWithGyms = await Promise.all(gymOwners.map(async (o) => {
       const gym = await Gym.findOne({ ownerId: o._id }).select('name');
-      return { id: o._id, ownerName: o.name, gymName: gym?.name || 'No Gym' };
+      if (!gym) return null;
+      return { id: o._id, ownerName: o.name, gymName: gym.name, status: o.status };
     }));
-    res.status(200).json(ownersWithGyms);
+    
+    const filteredOwners = ownersWithGyms.filter(o => o !== null);
+    res.status(200).json(filteredOwners);
   } catch (error: any) {
     console.error('Get Gym Owners List Error:', error);
     res.status(500).json({ message: error.message });
@@ -463,7 +510,8 @@ export const getBroadcastStatus = async (req: AuthRequest, res: Response): Promi
         userId: user._id,
         ownerName: user.name,
         gymName: gym?.name || 'No Gym',
-        isRead: n.isRead
+        isRead: n.isRead,
+        readAt: n.isRead ? n.updatedAt : null
       };
     }));
     

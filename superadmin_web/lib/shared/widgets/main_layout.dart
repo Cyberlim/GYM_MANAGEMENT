@@ -11,6 +11,7 @@ import 'package:superadmin_web/features/calendar/calendar_provider.dart';
 import 'package:superadmin_web/features/calendar/widgets/add_event_dialog.dart';
 import 'package:superadmin_web/features/support/support_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:superadmin_web/data/providers/superadmin_provider.dart';
 
 class MainLayout extends ConsumerStatefulWidget {
   final Widget child;
@@ -70,7 +71,23 @@ class _MobileLayout extends ConsumerWidget {
             offset: const Offset(0, 48),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             onSelected: (value) {
-              if (value == 'profile') context.go('/profile');
+              if (value == 'search_dialog') {
+                showDialog(
+                  context: context,
+                  builder: (context) => Align(
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: kToolbarHeight),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: _GlobalSearchField(),
+                      ),
+                    ),
+                  ),
+                );
+              } else if (value == 'calendar_dialog') {
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please use desktop view to manage events directly.')));
+              } else if (value == 'profile') context.go('/profile');
               else if (value == 'settings') context.go('/settings');
               else if (value == 'theme') ref.read(themeProvider.notifier).toggleTheme();
               else if (value == 'logout') {
@@ -81,9 +98,12 @@ class _MobileLayout extends ConsumerWidget {
               }
             },
             itemBuilder: (context) => [
+              PopupMenuItem(value: 'search_dialog', child: Row(children: [Icon(LucideIcons.search, size: 16), const SizedBox(width: 12), const Text('Search')])),
+              PopupMenuItem(value: 'calendar_dialog', child: Row(children: [Icon(LucideIcons.calendar, size: 16), const SizedBox(width: 12), const Text('Upcoming Events')])),
+              PopupMenuItem(value: 'theme', child: Row(children: [Icon(isDark ? LucideIcons.sun : LucideIcons.moon, size: 16), const SizedBox(width: 12), Text(isDark ? 'Light Mode' : 'Dark Mode')])),
+              const PopupMenuDivider(),
               PopupMenuItem(value: 'profile', child: Row(children: [Icon(LucideIcons.user, size: 16), const SizedBox(width: 12), const Text('My Profile')])),
               PopupMenuItem(value: 'settings', child: Row(children: [Icon(LucideIcons.settings, size: 16), const SizedBox(width: 12), const Text('Settings')])),
-              PopupMenuItem(value: 'theme', child: Row(children: [Icon(isDark ? LucideIcons.sun : LucideIcons.moon, size: 16), const SizedBox(width: 12), Text(isDark ? 'Light Mode' : 'Dark Mode')])),
               const PopupMenuDivider(),
               PopupMenuItem(value: 'logout', child: Row(children: [const Icon(LucideIcons.logOut, size: 16, color: Colors.red), const SizedBox(width: 12), const Text('Logout', style: TextStyle(color: Colors.red))])),
             ],
@@ -110,6 +130,124 @@ class _MobileLayout extends ConsumerWidget {
     );
   }
 }
+
+class _GlobalSearchField extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final gymsState = ref.watch(superadminGymsProvider);
+    final gyms = gymsState.value ?? [];
+
+    return Container(
+      width: 250,
+      height: 40,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          const Icon(LucideIcons.search, size: 16, color: Colors.grey),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Autocomplete<Object>(
+              displayStringForOption: (option) {
+                if (option is String) return option;
+                if (option is Map) return option['gymName'] ?? '';
+                return option.toString();
+              },
+              optionsBuilder: (TextEditingValue textEditingValue) {
+                if (textEditingValue.text.isEmpty) {
+                  return const Iterable<Object>.empty();
+                }
+                final query = textEditingValue.text.toLowerCase();
+                final filtered = gyms.where((gym) {
+                  if (gym is! Map) return false;
+                  final gymName = (gym['gymName'] ?? '').toString().toLowerCase();
+                  final ownerName = (gym['ownerName'] ?? '').toString().toLowerCase();
+                  return gymName.contains(query) || ownerName.contains(query);
+                }).toList().cast<Object>();
+
+                if (filtered.isEmpty) {
+                  return ['no search avilable'];
+                }
+                return filtered;
+              },
+              fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
+                return TextField(
+                  controller: textEditingController,
+                  focusNode: focusNode,
+                  style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
+                  decoration: const InputDecoration(
+                    hintText: 'Search gyms, owners, i...',
+                    hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    isDense: true,
+                    contentPadding: EdgeInsets.zero,
+                    filled: false,
+                    hoverColor: Colors.transparent,
+                  ),
+                );
+              },
+              optionsViewBuilder: (context, onSelected, options) {
+                return Align(
+                  alignment: Alignment.topLeft,
+                  child: Material(
+                    elevation: 4,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      width: 220,
+                      constraints: const BoxConstraints(maxHeight: 250),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        shrinkWrap: true,
+                        itemCount: options.length,
+                        itemBuilder: (BuildContext context, int index) {
+                          final option = options.elementAt(index);
+                          final isNoResult = option is String && option == 'no search avilable';
+                          final displayText = isNoResult 
+                              ? option as String
+                              : (option is Map ? '${option['gymName']} (${option['ownerName']})' : option.toString());
+
+                          return InkWell(
+                            onTap: () {
+                              if (isNoResult) return;
+                              onSelected(option);
+                              
+                              // Check if we are inside a dialog (for mobile view search)
+                              if (MediaQuery.of(context).size.width < 900 && Navigator.canPop(context)) {
+                                Navigator.pop(context);
+                              }
+                              if (option is Map && option['id'] != null) {
+                                context.go('/gyms/${option['id']}');
+                              }
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              child: Text(displayText, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface)),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 
 class _DesktopLayout extends StatelessWidget {
   final Widget child;
@@ -353,6 +491,9 @@ class _TopNavigationBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(themeProvider) == ThemeMode.dark;
     final profile = ref.watch(profileProvider);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobileOrTablet = screenWidth < 900;
+    
     return Container(
       padding: const EdgeInsets.only(left: 32, right: 32, top: 32, bottom: 16),
       color: Colors.transparent, 
@@ -386,106 +527,27 @@ class _TopNavigationBar extends ConsumerWidget {
           Row(
             children: [
               // Search Bar
-              Container(
-                width: 250,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    const Icon(LucideIcons.search, size: 16, color: Colors.grey),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Autocomplete<String>(
-                        optionsBuilder: (TextEditingValue textEditingValue) {
-                          if (textEditingValue.text.isEmpty) {
-                            return const Iterable<String>.empty();
-                          }
-                          // Mock global data to search from
-                          final searchTerms = [
-                            'Emily Johnson', 'Michael Brown', 'Sophia Davis', 
-                            'James Wilson', 'Olivia Martinez', 'Iron Gym', 
-                            'Fitness First', 'Powerhouse', 'Gold Plan', 'Silver Plan',
-                            'Active Gyms', 'Pending Approvals', 'Revenue Reports'
-                          ];
-                          return searchTerms.where((String option) {
-                            return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
-                          });
-                        },
-                        fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-                          return TextField(
-                            controller: textEditingController,
-                            focusNode: focusNode,
-                            style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface),
-                            decoration: const InputDecoration(
-                              hintText: 'Search gyms, owners, i...',
-                              hintStyle: TextStyle(color: Colors.grey, fontSize: 13),
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              isDense: true,
-                              contentPadding: EdgeInsets.zero,
-                              filled: false,
-                              hoverColor: Colors.transparent,
-                            ),
-                          );
-                        },
-                        optionsViewBuilder: (context, onSelected, options) {
-                          return Align(
-                            alignment: Alignment.topLeft,
-                            child: Material(
-                              elevation: 4,
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                width: 220,
-                                constraints: const BoxConstraints(maxHeight: 250),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: ListView.builder(
-                                  padding: const EdgeInsets.symmetric(vertical: 8),
-                                  shrinkWrap: true,
-                                  itemCount: options.length,
-                                  itemBuilder: (BuildContext context, int index) {
-                                    final String option = options.elementAt(index);
-                                    return InkWell(
-                                      onTap: () => onSelected(option),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                        child: Text(option, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface)),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 16),
+              if (!isMobileOrTablet) ...[
+                _GlobalSearchField(),
+                const SizedBox(width: 16),
+              ],
               
               const _NotificationDropdown(),
               const SizedBox(width: 12),
+              const SizedBox(width: 12),
               const _MessagesDropdown(),
-              const SizedBox(width: 12),
-              const _CalendarDropdown(),
-              const SizedBox(width: 12),
-              _buildHeaderIcon(
-                context, 
-                isDark ? LucideIcons.sun : LucideIcons.moon,
-                onTap: () {
-                  ref.read(themeProvider.notifier).toggleTheme();
-                }
-              ),
+              if (!isMobileOrTablet) ...[
+                const SizedBox(width: 12),
+                const _CalendarDropdown(),
+                const SizedBox(width: 12),
+                _buildHeaderIcon(
+                  context, 
+                  isDark ? LucideIcons.sun : LucideIcons.moon,
+                  onTap: () {
+                    ref.read(themeProvider.notifier).toggleTheme();
+                  }
+                ),
+              ],
               const SizedBox(width: 16),
               
               // Profile Dropdown
@@ -495,7 +557,27 @@ class _TopNavigationBar extends ConsumerWidget {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   tooltip: 'Profile options',
                   onSelected: (value) {
-                    if (value == 'profile') {
+                    if (value == 'search_dialog') {
+                      showDialog(
+                        context: context,
+                        builder: (context) => Align(
+                          alignment: Alignment.topCenter,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: kToolbarHeight),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: _GlobalSearchField(),
+                            ),
+                          ),
+                        ),
+                      );
+                    } else if (value == 'calendar_dialog') {
+                      // Note: since CalendarDropdown uses a popup menu natively, we'll just show its internal builder directly or navigate.
+                      // The simplest approach is to use a dialog wrapper:
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please use desktop view to manage events directly.')));
+                    } else if (value == 'theme_toggle') {
+                      ref.read(themeProvider.notifier).toggleTheme();
+                    } else if (value == 'profile') {
                       context.go('/profile');
                     } else if (value == 'settings') {
                       context.go('/settings');
@@ -509,6 +591,39 @@ class _TopNavigationBar extends ConsumerWidget {
                     }
                   },
                   itemBuilder: (context) => [
+                    if (isMobileOrTablet) ...[
+                      PopupMenuItem(
+                        value: 'search_dialog',
+                        child: Row(
+                          children: [
+                            Icon(LucideIcons.search, size: 16, color: Theme.of(context).colorScheme.onSurface),
+                            const SizedBox(width: 12),
+                            const Text('Search'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'calendar_dialog',
+                        child: Row(
+                          children: [
+                            Icon(LucideIcons.calendar, size: 16, color: Theme.of(context).colorScheme.onSurface),
+                            const SizedBox(width: 12),
+                            const Text('Upcoming Events'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'theme_toggle',
+                        child: Row(
+                          children: [
+                            Icon(isDark ? LucideIcons.sun : LucideIcons.moon, size: 16, color: Theme.of(context).colorScheme.onSurface),
+                            const SizedBox(width: 12),
+                            Text(isDark ? 'Light Mode' : 'Dark Mode'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuDivider(),
+                    ],
                     PopupMenuItem(
                       value: 'profile',
                       child: Row(

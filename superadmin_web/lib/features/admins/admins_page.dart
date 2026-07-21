@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/providers/admins_provider.dart';
 import '../../features/profile/profile_provider.dart';
@@ -136,32 +137,79 @@ class _AdminsPageState extends ConsumerState<AdminsPage> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, stack) => Center(child: Text('Error: $err')),
         data: (admins) {
-          return Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 800;
+              
+              return Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Manage Admins', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                        const SizedBox(height: 4),
-                        Text('View and manage superadmin access.', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
-                      ],
-                    ),
-                    if (isMasterAdmin)
-                      PrimaryButton(
-                        text: 'Add Admin',
-                        icon: LucideIcons.plus,
-                        isFullWidth: false,
-                        onPressed: _showAddAdminModal,
+                    if (isMobile)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              if (context.canPop()) ...[
+                                IconButton(
+                                  icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),
+                                  onPressed: () => context.pop(),
+                                ),
+                                const SizedBox(width: 8),
+                              ],
+                              Text('Manage Admins', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text('View and manage superadmin access.', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                          const SizedBox(height: 16),
+                          if (isMasterAdmin)
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: PrimaryButton(
+                                text: 'Add Admin',
+                                icon: LucideIcons.plus,
+                                isFullWidth: false,
+                                onPressed: _showAddAdminModal,
+                              ),
+                            ),
+                        ],
+                      )
+                    else
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  if (context.canPop()) ...[
+                                    IconButton(
+                                      icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),
+                                      onPressed: () => context.pop(),
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
+                                  Text('Manage Admins', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text('View and manage superadmin access.', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                            ],
+                          ),
+                          if (isMasterAdmin)
+                            PrimaryButton(
+                              text: 'Add Admin',
+                              icon: LucideIcons.plus,
+                              isFullWidth: false,
+                              onPressed: _showAddAdminModal,
+                            ),
+                        ],
                       ),
-                  ],
-                ),
-                const SizedBox(height: 32),
+                    const SizedBox(height: 32),
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
@@ -208,7 +256,9 @@ class _AdminsPageState extends ConsumerState<AdminsPage> {
             ),
           );
         },
-      ),
-    );
+      );
+    },
+  ),
+);
   }
 }

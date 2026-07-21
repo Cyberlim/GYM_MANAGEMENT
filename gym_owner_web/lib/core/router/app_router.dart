@@ -35,6 +35,7 @@ final appRouter = GoRouter(
   redirect: (context, state) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
+    final isGymSetup = prefs.getBool('isGymSetup') ?? false;
     
     final isPublicRoute = state.uri.path == '/login' || 
                           state.uri.path == '/signup' || 
@@ -45,6 +46,18 @@ final appRouter = GoRouter(
 
     if (token == null && !isPublicRoute) {
       return '/login';
+    }
+
+    if (token != null) {
+      final isOnboardingRoute = state.uri.path == '/gym-setup' ||
+                                state.uri.path == '/start-trial' ||
+                                state.uri.path == '/choose-plan' ||
+                                state.uri.path == '/payment' ||
+                                state.uri.path == '/success';
+                                
+      if (!isGymSetup && !isOnboardingRoute && !isPublicRoute) {
+        return '/gym-setup';
+      }
     }
     
     return null;

@@ -74,9 +74,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(flex: 4, child: _buildRecentGymsList(dashboardData)),
+                        Expanded(flex: 4, child: _buildRecentGymsList(dashboardData, true)),
                         const SizedBox(width: 24),
-                        Expanded(flex: 4, child: _buildRecentInvoicesList(dashboardData)),
+                        Expanded(flex: 4, child: _buildRecentInvoicesList(dashboardData, true)),
                         const SizedBox(width: 24),
                         Expanded(flex: 3, child: _buildActivityFeed(dashboardData)),
                       ],
@@ -84,9 +84,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   else
                     Column(
                       children: [
-                        _buildRecentGymsList(dashboardData),
+                        _buildRecentGymsList(dashboardData, false),
                         const SizedBox(height: 24),
-                        _buildRecentInvoicesList(dashboardData),
+                        _buildRecentInvoicesList(dashboardData, false),
                         const SizedBox(height: 24),
                         _buildActivityFeed(dashboardData),
                       ],
@@ -246,8 +246,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
 
     final maxY = spots.map((s) => s.y).fold<double>(0, (prev, y) => y > prev ? y : prev) * 1.2;
     
-    return Container(
-      height: 350,
+    return GestureDetector(
+      onTap: () => context.go('/finance'),
+      child: HoverCard(
+        child: Container(
+          height: 350,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -375,6 +378,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
           ),
         ],
       ),
+        ),
+      ),
     );
   }
 
@@ -390,8 +395,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     final suspendedPct = totalGyms > 0 ? (suspended / totalGyms * 100).toStringAsFixed(1) : '0.0';
     final pendingPct = totalGyms > 0 ? (pending / totalGyms * 100).toStringAsFixed(1) : '0.0';
 
-    return Container(
-      height: 350,
+    return GestureDetector(
+      onTap: () => context.go('/gyms'),
+      child: HoverCard(
+        child: Container(
+          height: 350,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
@@ -464,6 +472,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }
@@ -611,13 +621,16 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }
 
   // --- Lists Row ---
-  Widget _buildRecentGymsList(Map<String, dynamic> data) {
+  Widget _buildRecentGymsList(Map<String, dynamic> data, bool isDesktop) {
     final recentGymsList = data['recentGyms'] as List<dynamic>? ?? [];
-    return Container(
-      height: 400,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+    return GestureDetector(
+      onTap: () => context.go('/gyms'),
+      child: HoverCard(
+        child: Container(
+          height: 400,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(color: Theme.of(context).shadowColor.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
@@ -630,12 +643,15 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Recent Gyms', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-              Row(
-                children: [
-                  Text('View All', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                  const SizedBox(width: 4),
-                  Icon(LucideIcons.chevronRight, size: 14, color: Theme.of(context).colorScheme.onSurface),
-                ],
+              InkWell(
+                onTap: () => context.go('/gyms'),
+                child: Row(
+                  children: [
+                    Text('View All', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(width: 4),
+                    Icon(LucideIcons.chevronRight, size: 14, color: Theme.of(context).colorScheme.onSurface),
+                  ],
+                ),
               ),
             ],
           ),
@@ -645,7 +661,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             : Expanded(
             child: ListView.separated(
               itemCount: recentGymsList.length,
-              separatorBuilder: (context, index) => Divider(height: 24, color: Theme.of(context).dividerColor),
+              separatorBuilder: (context, index) => isDesktop ? Divider(height: 24, color: Theme.of(context).dividerColor) : const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final gym = recentGymsList[index] as Map<String, dynamic>;
 
@@ -676,9 +692,68 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   planColor = palette[1];
                 }
 
-                return Row(
-                  children: [
-                    CircleAvatar(radius: 16, backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1), child: Icon(LucideIcons.user, size: 16, color: Theme.of(context).colorScheme.primary)),
+                if (!isDesktop) {
+                  return InkWell(
+                    onTap: () => context.go('/gyms/${gym['id']}'),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Theme.of(context).dividerColor),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(radius: 20, backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1), child: Icon(LucideIcons.user, size: 20, color: Theme.of(context).colorScheme.primary)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(gym['name']!, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                                  const SizedBox(height: 4),
+                                  Text(gym['date']!, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+                                ],
+                              ),
+                            ),
+                            Icon(LucideIcons.moreVertical, size: 20, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: planBgColor,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(gym['plan']!, style: TextStyle(fontSize: 12, color: planColor, fontWeight: FontWeight.bold)),
+                            ),
+                            Row(
+                              children: [
+                                Container(width: 8, height: 8, decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.green)),
+                                const SizedBox(width: 6),
+                                Text(gym['status']!, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+                }
+
+                return InkWell(
+                  onTap: () => context.go('/gyms/${gym['id']}'),
+                  child: Row(
+                    children: [
+                      CircleAvatar(radius: 16, backgroundColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1), child: Icon(LucideIcons.user, size: 16, color: Theme.of(context).colorScheme.primary)),
                     const SizedBox(width: 12),
                     Expanded(
                       flex: 4,
@@ -703,7 +778,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(width: 6, height: 6, decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.green)),
+                          Container(width: 6, height: 6, decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.green)),
                           const SizedBox(width: 6),
                           Text(gym['status']!, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w500)),
                         ],
@@ -715,22 +790,28 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     ),
                     Icon(LucideIcons.moreVertical, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
                   ],
-                );
+                ),
+              );
               },
             ),
           ),
         ],
       ),
+        ),
+      ),
     );
   }
 
-  Widget _buildRecentInvoicesList(Map<String, dynamic> data) {
+  Widget _buildRecentInvoicesList(Map<String, dynamic> data, bool isDesktop) {
     final recentInvoicesList = data['recentInvoices'] as List<dynamic>? ?? [];
-    return Container(
-      height: 400,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+    return GestureDetector(
+      onTap: () => context.go('/finance', extra: {'initialTab': 1}),
+      child: HoverCard(
+        child: Container(
+          height: 400,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(color: Theme.of(context).shadowColor.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
@@ -743,12 +824,15 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Recent Invoices', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-              Row(
-                children: [
-                  Text('View All', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                  const SizedBox(width: 4),
-                  Icon(LucideIcons.chevronRight, size: 14, color: Theme.of(context).colorScheme.onSurface),
-                ],
+              InkWell(
+                onTap: () => context.go('/finance', extra: {'initialTab': 1}),
+                child: Row(
+                  children: [
+                    Text('View All', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(width: 4),
+                    Icon(LucideIcons.chevronRight, size: 14, color: Theme.of(context).colorScheme.onSurface),
+                  ],
+                ),
               ),
             ],
           ),
@@ -758,7 +842,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             : Expanded(
             child: ListView.separated(
               itemCount: recentInvoicesList.length,
-              separatorBuilder: (context, index) => Divider(height: 24, color: Theme.of(context).dividerColor),
+              separatorBuilder: (context, index) => isDesktop ? Divider(height: 24, color: Theme.of(context).dividerColor) : const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final invoice = recentInvoicesList[index] as Map<String, dynamic>;
                 final id = invoice['id'].toString();
@@ -784,12 +868,56 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     statusColor = Colors.grey;
                 }
 
-                return Row(
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Text(id, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+                if (!isDesktop) {
+                  return InkWell(
+                    onTap: () => context.go('/finance', extra: {'initialTab': 1}),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).scaffoldBackgroundColor,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Theme.of(context).dividerColor),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(id, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+                            Text(amountStr, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(name, style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface), overflow: TextOverflow.ellipsis),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                Container(width: 8, height: 8, decoration: BoxDecoration(shape: BoxShape.circle, color: statusColor)),
+                                const SizedBox(width: 6),
+                                Text(status, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w600)),
+                              ],
+                            ),
+                            Icon(LucideIcons.moreVertical, size: 20, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+                          ],
+                        ),
+                      ],
                     ),
+                  ),
+                );
+                }
+
+                return InkWell(
+                  onTap: () => context.go('/finance', extra: {'initialTab': 1}),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Text(id, style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+                      ),
                     Expanded(
                       flex: 3,
                       child: Text(name, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface), overflow: TextOverflow.ellipsis),
@@ -818,22 +946,28 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       ),
                     ),
                   ],
-                );
+                ),
+              );
               },
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }
 
   Widget _buildActivityFeed(Map<String, dynamic> data) {
     final activities = data['activities'] as List<dynamic>? ?? [];
-    return Container(
-      height: 400,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+    return GestureDetector(
+      onTap: () => context.go('/gyms'),
+      child: HoverCard(
+        child: Container(
+          height: 400,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(color: Theme.of(context).shadowColor.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
@@ -846,12 +980,15 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Activity Feed', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-              Row(
-                children: [
-                  Text('View All', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                  const SizedBox(width: 4),
-                  Icon(LucideIcons.chevronRight, size: 14, color: Theme.of(context).colorScheme.onSurface),
-                ],
+              InkWell(
+                onTap: () => context.go('/gyms'),
+                child: Row(
+                  children: [
+                    Text('View All', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    const SizedBox(width: 4),
+                    Icon(LucideIcons.chevronRight, size: 14, color: Theme.of(context).colorScheme.onSurface),
+                  ],
+                ),
               ),
             ],
           ),
@@ -882,9 +1019,19 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   color = Colors.blue;
                 }
                 
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                return InkWell(
+                  onTap: () {
+                    if (activity['gymId'] != null) {
+                      context.go('/gyms/${activity['gymId']}');
+                    } else if (type == 'payment') {
+                      context.go('/finance');
+                    } else {
+                      context.go('/gyms');
+                    }
+                  },
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
@@ -906,11 +1053,14 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                     ),
                     Text(time, style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
                   ],
-                );
+                ),
+              );
               },
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

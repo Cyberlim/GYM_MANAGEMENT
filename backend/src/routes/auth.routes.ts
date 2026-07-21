@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerUser, loginUser, googleLogin, getMe, updateProfileImage, updateProfile, updateGymLogo, updateSettings, updatePassword, setup2FA, verify2FASetup, verify2FALogin, sendFallback2FA, verifyEmailRegistration, requestPasswordReset, resetPassword, getActiveSessions, revokeSession } from '../controllers/auth.controller';
+import { registerUser, loginUser, googleLogin, getMe, updateProfileImage, updateProfile, updateGymLogo, updateSettings, updatePassword, setup2FA, verify2FASetup, verify2FALogin, sendFallback2FA, verifyEmailRegistration, requestPasswordReset, resetPassword, getActiveSessions, revokeSession, checkEmail2FA } from '../controllers/auth.controller';
 import { upload } from '../config/cloudinary';
 import { protect } from '../middlewares/auth.middleware';
 
@@ -23,6 +23,7 @@ router.post('/2fa/setup', protect, setup2FA);
 router.post('/2fa/verify-setup', protect, verify2FASetup);
 router.post('/verify-2fa', verify2FALogin);
 router.post('/send-fallback-2fa', sendFallback2FA);
+router.post('/check-email-2fa', checkEmail2FA);
 
 // Session Routes
 router.get('/sessions', protect, getActiveSessions);

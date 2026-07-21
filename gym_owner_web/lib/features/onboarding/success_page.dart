@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_owner_web/core/providers/user_provider.dart';
 
-class SuccessPage extends StatelessWidget {
+class SuccessPage extends ConsumerWidget {
   const SuccessPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: Center(
@@ -48,7 +50,12 @@ class SuccessPage extends StatelessWidget {
               const SizedBox(height: 48),
               
               ElevatedButton(
-                onPressed: () => context.go('/dashboard'),
+                onPressed: () async {
+                  await ref.read(userProvider.notifier).refresh();
+                  if (context.mounted) {
+                    context.go('/dashboard');
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF6366F1),
                   foregroundColor: Colors.white,

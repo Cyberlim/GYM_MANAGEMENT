@@ -35,7 +35,17 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initSocket();
+      _checkGymSetup();
     });
+  }
+
+  void _checkGymSetup() {
+    final userState = ref.read(userProvider).value;
+    if (userState != null && userState.gym == null) {
+      if (mounted) {
+        context.go('/gym-setup');
+      }
+    }
   }
 
   void _initSocket() {
@@ -60,6 +70,14 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(userProvider, (previous, next) {
+      if (next.value != null && next.value!.gym == null) {
+        if (mounted) {
+          context.go('/gym-setup');
+        }
+      }
+    });
+
     final showSidebar = MediaQuery.of(context).size.width >= 900;
 
     return Scaffold(

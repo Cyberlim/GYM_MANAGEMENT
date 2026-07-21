@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/mock/mock_data.dart';
 import '../../shared/widgets/highlighted_text.dart';
@@ -37,11 +38,22 @@ class _FinancePageState extends State<FinancePage> with SingleTickerProviderStat
       children: [
         // Header and Tabs
         Padding(
-          padding: const EdgeInsets.only(bottom: 24.0),
+          padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Finance & Billing', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+              Row(
+                children: [
+                  if (context.canPop()) ...[
+                    IconButton(
+                      icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),
+                      onPressed: () => context.pop(),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Text('Finance & Billing', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                ],
+              ),
               const SizedBox(height: 4),
               Text('Manage payments, invoices, and platform transactions.', style: TextStyle(fontSize: 14, color: Colors.grey[600])),
               const SizedBox(height: 24),
@@ -103,6 +115,7 @@ class _PaymentsViewState extends ConsumerState<_PaymentsView> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
     return ref.watch(superadminFinanceProvider).when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) => Center(child: Text('Error: $err')),
@@ -120,25 +133,26 @@ class _PaymentsViewState extends ConsumerState<_PaymentsView> {
     return CustomScrollView(
       slivers: [
         _buildSliverAppBar(context, 'Search payments...', ['All', 'Completed', 'Failed', 'Refunded'], (val) => setState(() => _selectedStatus = val), (val) => setState(() => _searchQuery = val), _selectedStatus),
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: _StickyHeaderDelegate(
-            child: Container(
-              decoration: _tableHeaderDecoration(context),
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-              child: Row(
-                children: [
-                  Expanded(flex: 2, child: Text('PAYMENT ID', style: _headerStyle(context))),
-                  Expanded(flex: 3, child: Text('GYM NAME', style: _headerStyle(context))),
-                  Expanded(flex: 2, child: Text('PLAN', style: _headerStyle(context))),
-                  Expanded(flex: 2, child: Text('AMOUNT', style: _headerStyle(context))),
-                  Expanded(flex: 2, child: Text('DATE', style: _headerStyle(context))),
-                  Expanded(flex: 2, child: Text('STATUS', style: _headerStyle(context))),
-                ],
+        if (!isMobile)
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _StickyHeaderDelegate(
+              child: Container(
+                decoration: _tableHeaderDecoration(context),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                child: Row(
+                  children: [
+                    Expanded(flex: 2, child: Text('PAYMENT ID', style: _headerStyle(context))),
+                    Expanded(flex: 3, child: Text('GYM NAME', style: _headerStyle(context))),
+                    Expanded(flex: 2, child: Text('PLAN', style: _headerStyle(context))),
+                    Expanded(flex: 2, child: Text('AMOUNT', style: _headerStyle(context))),
+                    Expanded(flex: 2, child: Text('DATE', style: _headerStyle(context))),
+                    Expanded(flex: 2, child: Text('STATUS', style: _headerStyle(context))),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
         if (filteredPayments.isEmpty)
           _buildEmptyState(context)
         else
@@ -147,6 +161,63 @@ class _PaymentsViewState extends ConsumerState<_PaymentsView> {
               (context, index) {
                 final payment = filteredPayments[index];
                 final isLast = index == filteredPayments.length - 1;
+                
+                if (isMobile) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            HighlightedText(text: payment['id'].toString(), query: _searchQuery, style: TextStyle(fontWeight: FontWeight.w500, fontSize: 13, color: Color(0xFF4F46E5))),
+                            _buildStatusBadge(payment['status'].toString()),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        HighlightedText(text: payment['gymName'].toString(), query: _searchQuery, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('PLAN', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                                const SizedBox(height: 4),
+                                Text(payment['plan'] ?? 'Basic', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('AMOUNT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                                const SizedBox(height: 4),
+                                Text('\$${payment['amount']}', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text('DATE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                                const SizedBox(height: 4),
+                                Text(payment['date'] ?? '', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
                 return Container(
                   decoration: _tableRowDecoration(context, isLast),
                   padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -194,6 +265,7 @@ class _InvoicesViewState extends ConsumerState<_InvoicesView> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
     return ref.watch(superadminFinanceProvider).when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) => Center(child: Text('Error: $err')),
@@ -211,26 +283,27 @@ class _InvoicesViewState extends ConsumerState<_InvoicesView> {
     return CustomScrollView(
       slivers: [
         _buildSliverAppBar(context, 'Search invoices...', ['All', 'Paid', 'Pending', 'Overdue'], (val) => setState(() => _selectedStatus = val), (val) => setState(() => _searchQuery = val), _selectedStatus),
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: _StickyHeaderDelegate(
-            child: Container(
-              decoration: _tableHeaderDecoration(context),
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-              child: Row(
-                children: [
-                  Expanded(flex: 2, child: Text('INVOICE ID', style: _headerStyle(context))),
-                  Expanded(flex: 3, child: Text('GYM', style: _headerStyle(context))),
-                  Expanded(flex: 2, child: Text('AMOUNT', style: _headerStyle(context))),
-                  Expanded(flex: 2, child: Text('ISSUE DATE', style: _headerStyle(context))),
-                  Expanded(flex: 2, child: Text('DUE DATE', style: _headerStyle(context))),
-                  Expanded(flex: 2, child: Text('STATUS', style: _headerStyle(context))),
-                  Expanded(flex: 1, child: SizedBox()), // Actions
-                ],
+        if (!isMobile)
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _StickyHeaderDelegate(
+              child: Container(
+                decoration: _tableHeaderDecoration(context),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                child: Row(
+                  children: [
+                    Expanded(flex: 2, child: Text('INVOICE ID', style: _headerStyle(context))),
+                    Expanded(flex: 3, child: Text('GYM', style: _headerStyle(context))),
+                    Expanded(flex: 2, child: Text('AMOUNT', style: _headerStyle(context))),
+                    Expanded(flex: 2, child: Text('ISSUE DATE', style: _headerStyle(context))),
+                    Expanded(flex: 2, child: Text('DUE DATE', style: _headerStyle(context))),
+                    Expanded(flex: 2, child: Text('STATUS', style: _headerStyle(context))),
+                    Expanded(flex: 1, child: SizedBox()), // Actions
+                  ],
+                ),
               ),
             ),
           ),
-        ),
         if (filteredInvoices.isEmpty)
           _buildEmptyState(context)
         else
@@ -239,6 +312,78 @@ class _InvoicesViewState extends ConsumerState<_InvoicesView> {
               (context, index) {
                 final invoice = filteredInvoices[index];
                 final isLast = index == filteredInvoices.length - 1;
+
+                if (isMobile) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(invoice['id'].toString(), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF4F46E5))),
+                            _buildStatusBadge(invoice['status'].toString()),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(invoice['gymName'].toString(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).colorScheme.onSurface)),
+                        Text(invoice['ownerName'].toString(), style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('AMOUNT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                                const SizedBox(height: 4),
+                                Text('\$${invoice['amount']}', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Theme.of(context).colorScheme.onSurface)),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('ISSUE DATE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                                const SizedBox(height: 4),
+                                Text(invoice['issueDate']?.toString() ?? '', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text('DUE DATE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                                const SizedBox(height: 4),
+                                Text(invoice['dueDate']?.toString() ?? '', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: () {},
+                            icon: Icon(LucideIcons.download, size: 16),
+                            label: const Text('Download PDF'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppTheme.primaryColor,
+                              side: BorderSide(color: AppTheme.primaryColor.withValues(alpha: 0.5)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
                 return Container(
                   decoration: _tableRowDecoration(context, isLast),
                   padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
@@ -307,6 +452,7 @@ class _TransactionsViewState extends ConsumerState<_TransactionsView> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
     return ref.watch(superadminFinanceProvider).when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (err, stack) => Center(child: Text('Error: $err')),
@@ -324,26 +470,27 @@ class _TransactionsViewState extends ConsumerState<_TransactionsView> {
     return CustomScrollView(
       slivers: [
         _buildSliverAppBar(context, 'Search transactions...', ['All', 'Success', 'Pending', 'Failed'], (val) => setState(() => _selectedStatus = val), (val) => setState(() => _searchQuery = val), _selectedStatus),
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: _StickyHeaderDelegate(
-            child: Container(
-              decoration: _tableHeaderDecoration(context),
-              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-              child: Row(
-                children: [
-                  Expanded(flex: 2, child: Text('TRANSACTION ID', style: _headerStyle(context))),
-                  Expanded(flex: 3, child: Text('GYM', style: _headerStyle(context))),
-                  Expanded(flex: 2, child: Text('AMOUNT', style: _headerStyle(context))),
-                  Expanded(flex: 2, child: Text('DATE', style: _headerStyle(context))),
-                  Expanded(flex: 2, child: Text('METHOD', style: _headerStyle(context))),
-                  Expanded(flex: 2, child: Text('TYPE', style: _headerStyle(context))),
-                  Expanded(flex: 2, child: Text('STATUS', style: _headerStyle(context))),
-                ],
+        if (!isMobile)
+          SliverPersistentHeader(
+            pinned: true,
+            delegate: _StickyHeaderDelegate(
+              child: Container(
+                decoration: _tableHeaderDecoration(context),
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                child: Row(
+                  children: [
+                    Expanded(flex: 2, child: Text('TRANSACTION ID', style: _headerStyle(context))),
+                    Expanded(flex: 3, child: Text('GYM', style: _headerStyle(context))),
+                    Expanded(flex: 2, child: Text('AMOUNT', style: _headerStyle(context))),
+                    Expanded(flex: 2, child: Text('DATE', style: _headerStyle(context))),
+                    Expanded(flex: 2, child: Text('METHOD', style: _headerStyle(context))),
+                    Expanded(flex: 2, child: Text('TYPE', style: _headerStyle(context))),
+                    Expanded(flex: 2, child: Text('STATUS', style: _headerStyle(context))),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
         if (filteredTransactions.isEmpty)
           _buildEmptyState(context)
         else
@@ -352,6 +499,72 @@ class _TransactionsViewState extends ConsumerState<_TransactionsView> {
               (context, index) {
                 final trx = filteredTransactions[index];
                 final isLast = index == filteredTransactions.length - 1;
+
+                if (isMobile) {
+                  return Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(trx['id'].toString(), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF4F46E5))),
+                            _buildStatusBadge(trx['status'].toString()),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(trx['gymName'].toString(), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).colorScheme.onSurface)),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('TYPE & METHOD', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Text(trx['type'].toString(), style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+                                    const SizedBox(width: 8),
+                                    Icon(trx['paymentMethod'] == 'Credit Card' ? LucideIcons.creditCard : LucideIcons.building, size: 12, color: Colors.grey[600]),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('AMOUNT', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${trx['type'] == 'Refund' ? '-' : ''}\$${trx['amount']}', 
+                                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: trx['type'] == 'Refund' ? Colors.red : Theme.of(context).colorScheme.onSurface)
+                                ),
+                              ],
+                            ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text('DATE', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                                const SizedBox(height: 4),
+                                Text(trx['date'] ?? '', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
                 return Container(
                   decoration: _tableRowDecoration(context, isLast),
                   padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
@@ -432,45 +645,42 @@ BoxDecoration _tableRowDecoration(BuildContext context, bool isLast) {
 }
 
 Widget _buildSliverAppBar(BuildContext context, String searchHint, List<String> statusOptions, Function(String) onStatusChanged, Function(String) onSearchChanged, String selectedStatus) {
+  final isMobile = MediaQuery.of(context).size.width < 800;
+  
   return SliverAppBar(
     floating: true,
     snap: true,
     automaticallyImplyLeading: false,
     elevation: 0,
     backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-    toolbarHeight: 80,
+    toolbarHeight: isMobile ? 180 : 80,
     flexibleSpace: FlexibleSpaceBar(
       background: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: isMobile 
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(
-                      width: 300,
-                      height: 40,
-                      child: TextField(
-                        onChanged: onSearchChanged,
-                        decoration: InputDecoration(
-                          hintText: searchHint,
-                          hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 13),
-                          prefixIcon: Icon(LucideIcons.search, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
-                          filled: true,
-                          fillColor: Theme.of(context).colorScheme.surface,
-                          isDense: true,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
-                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
-                          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4))),
-                        ),
-                        style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
+                    TextField(
+                      onChanged: onSearchChanged,
+                      decoration: InputDecoration(
+                        hintText: searchHint,
+                        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 13),
+                        prefixIcon: Icon(LucideIcons.search, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+                        filled: true,
+                        fillColor: Theme.of(context).colorScheme.surface,
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+                        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+                        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4))),
                       ),
+                      style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(height: 12),
                     Container(
                       height: 40,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -486,24 +696,80 @@ Widget _buildSliverAppBar(BuildContext context, String searchHint, List<String> 
                         ),
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      onPressed: () {},
+                      icon: Icon(LucideIcons.download, size: 16),
+                      label: Text('Export CSV', style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
+                  ],
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 300,
+                          height: 40,
+                          child: TextField(
+                            onChanged: onSearchChanged,
+                            decoration: InputDecoration(
+                              hintText: searchHint,
+                              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4), fontSize: 13),
+                              prefixIcon: Icon(LucideIcons.search, size: 16, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+                              filled: true,
+                              fillColor: Theme.of(context).colorScheme.surface,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+                              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+                              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(6), borderSide: BorderSide(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4))),
+                            ),
+                            style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          height: 40,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, border: Border.all(color: Theme.of(context).dividerColor), borderRadius: BorderRadius.circular(6)),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton<String>(
+                              value: selectedStatus,
+                              hint: Text('Status: $selectedStatus', style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurface)),
+                              icon: Icon(LucideIcons.chevronDown, size: 16),
+                              style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface),
+                              onChanged: (val) { if (val != null) onStatusChanged(val); },
+                              items: statusOptions.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () {},
+                      icon: Icon(LucideIcons.download, size: 16),
+                      label: Text('Export CSV', style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    ),
                   ],
                 ),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: Icon(LucideIcons.download, size: 16),
-                  label: Text('Export CSV', style: TextStyle(fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ],
-            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
         ],
       ),
     ),

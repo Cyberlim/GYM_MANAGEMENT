@@ -115,8 +115,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
           if (mounted) {
             if (response['isNewUser'] == true) {
+              await prefs.setBool('isGymSetup', false);
               context.go('/gym-setup');
             } else {
+              await prefs.setBool('isGymSetup', true);
               context.go('/dashboard');
             }
           }

@@ -33,9 +33,17 @@ class UserNotifier extends AsyncNotifier<UserData?> {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      final gymData = data['gym'] as Map<String, dynamic>?;
+      
+      if (gymData != null) {
+        await prefs.setBool('isGymSetup', true);
+      } else {
+        await prefs.setBool('isGymSetup', false);
+      }
+
       return UserData(
         user: data['user'] as Map<String, dynamic>,
-        gym: data['gym'] as Map<String, dynamic>?,
+        gym: gymData,
       );
     } else {
       if (response.statusCode == 401) {

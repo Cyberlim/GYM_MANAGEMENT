@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/app_theme.dart';
 import 'broadcast_provider.dart';
+import 'package:intl/intl.dart';
 
 class BroadcastPage extends ConsumerStatefulWidget {
   const BroadcastPage({super.key});
@@ -22,10 +23,22 @@ class _BroadcastPageState extends ConsumerState<BroadcastPage> with SingleTicker
   bool _isLoading = true;
   late TabController _tabController;
   
+  String _statusFilter = 'All'; // 'All', 'Active', 'Inactive'
+  
   List<GymOwnerSelection> get _filteredGymOwners {
-    if (_searchController.text.isEmpty) return _allGymOwners;
-    final q = _searchController.text.toLowerCase();
-    return _allGymOwners.where((g) => g.ownerName.toLowerCase().contains(q) || g.gymName.toLowerCase().contains(q)).toList();
+    List<GymOwnerSelection> list = _allGymOwners.where((g) => g.gymName != 'No Gym' && g.gymName.isNotEmpty).toList();
+    
+    if (_statusFilter == 'Active') {
+      list = list.where((g) => g.status == 'active').toList();
+    } else if (_statusFilter == 'Inactive') {
+      list = list.where((g) => g.status == 'suspended' || g.status == 'inactive').toList();
+    }
+
+    if (_searchController.text.isNotEmpty) {
+      final q = _searchController.text.toLowerCase();
+      list = list.where((g) => g.ownerName.toLowerCase().contains(q) || g.gymName.toLowerCase().contains(q)).toList();
+    }
+    return list;
   }
 
   @override
@@ -50,7 +63,7 @@ class _BroadcastPageState extends ConsumerState<BroadcastPage> with SingleTicker
 
   void _selectAllGyms() {
     setState(() {
-      _selectedGymIds = _allGymOwners.map((g) => g.id).toSet();
+      _selectedGymIds = _filteredGymOwners.map((g) => g.id).toSet();
     });
   }
 
@@ -267,7 +280,30 @@ class _BroadcastPageState extends ConsumerState<BroadcastPage> with SingleTicker
             },
           ),
           const Divider(),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'All', label: Text('All')),
+                ButtonSegment(value: 'Active', label: Text('Active')),
+                ButtonSegment(value: 'Inactive', label: Text('Inactive')),
+              ],
+              selected: {_statusFilter},
+              onSelectionChanged: (Set<String> newSelection) {
+                setState(() {
+                  _statusFilter = newSelection.first;
+                  _selectAll = false;
+                  _clearSelection();
+                });
+              },
+              style: SegmentedButton.styleFrom(
+                selectedBackgroundColor: AppTheme.primaryColor.withOpacity(0.2),
+                selectedForegroundColor: AppTheme.primaryColor,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
           TextField(
             controller: _searchController,
             decoration: InputDecoration(
@@ -286,7 +322,27 @@ class _BroadcastPageState extends ConsumerState<BroadcastPage> with SingleTicker
                 final gym = _filteredGymOwners[index];
                 final isSelected = _selectedGymIds.contains(gym.id);
                 return CheckboxListTile(
-                  title: Text(gym.ownerName, style: const TextStyle(fontWeight: FontWeight.w500)),
+                  title: Row(
+                    children: [
+                      Text(gym.ownerName, style: const TextStyle(fontWeight: FontWeight.w500)),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: gym.status == 'active' ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          gym.status.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: gym.status == 'active' ? Colors.green : Colors.orange,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   subtitle: Text(gym.gymName, style: const TextStyle(fontSize: 12, color: Colors.grey)),
                   value: isSelected,
                   activeColor: AppTheme.primaryColor,
@@ -348,7 +404,10 @@ class _BroadcastHistoryTabState extends ConsumerState<_BroadcastHistoryTab> {
     final statusList = await ref.read(broadcastProvider.notifier).fetchBroadcastStatus(item.id);
     
     if (!mounted) return;
-    Navigator.of(context).pop(); // dismiss loading
+    Navigator.of(context, rootNavigator: true).pop(); // dismiss loading
+
+    final seenList = statusList.where((s) => s.isRead).toList();
+    final unseenList = statusList.where((s) => !s.isRead).toList();
 
     showDialog(
       context: context,
@@ -357,30 +416,29 @@ class _BroadcastHistoryTabState extends ConsumerState<_BroadcastHistoryTab> {
         content: SizedBox(
           width: 500,
           height: 400,
-          child: ListView.builder(
-            itemCount: statusList.length,
-            itemBuilder: (context, index) {
-              final status = statusList[index];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: status.isRead ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
-                  child: Icon(
-                    status.isRead ? LucideIcons.checkCheck : LucideIcons.clock,
-                    color: status.isRead ? Colors.green : Colors.orange,
-                    size: 16,
-                  ),
+          child: ListView(
+            children: [
+              if (seenList.isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: Text('Seen', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 16)),
                 ),
-                title: Text(status.ownerName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                subtitle: Text(status.gymName),
-                trailing: Text(
-                  status.isRead ? 'Seen' : 'Unseen',
-                  style: TextStyle(
-                    color: status.isRead ? Colors.green : Colors.orange,
-                    fontWeight: FontWeight.bold
-                  ),
+                ...seenList.map((status) => _buildStatusTile(status)),
+                if (unseenList.isNotEmpty) const Divider(),
+              ],
+              if (unseenList.isNotEmpty) ...[
+                const Padding(
+                  padding: EdgeInsets.all(12.0),
+                  child: Text('Unseen', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, fontSize: 16)),
                 ),
-              );
-            },
+                ...unseenList.map((status) => _buildStatusTile(status)),
+              ],
+              if (statusList.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(24.0),
+                  child: Center(child: Text('No recipients found.')),
+                ),
+            ],
           ),
         ),
         actions: [
@@ -388,6 +446,40 @@ class _BroadcastHistoryTabState extends ConsumerState<_BroadcastHistoryTab> {
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('Close'),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusTile(BroadcastStatusItem status) {
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundColor: status.isRead ? Colors.green.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+        child: Icon(
+          status.isRead ? LucideIcons.checkCheck : LucideIcons.clock,
+          color: status.isRead ? Colors.green : Colors.orange,
+          size: 16,
+        ),
+      ),
+      title: Text(status.ownerName, style: const TextStyle(fontWeight: FontWeight.bold)),
+      subtitle: Text(status.gymName),
+      trailing: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            status.isRead ? 'Seen' : 'Unseen',
+            style: TextStyle(
+              color: status.isRead ? Colors.green : Colors.orange,
+              fontWeight: FontWeight.bold
+            ),
+          ),
+          if (status.isRead && status.readAt != null)
+            Text(
+              DateFormat('MMM d, hh:mm a').format(status.readAt!.toLocal()),
+              style: const TextStyle(fontSize: 10, color: Colors.grey),
+            ),
         ],
       ),
     );

@@ -90,6 +90,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
           // Save token (You'd typically use SharedPreferences or Riverpod here)
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('token', data['token']);
+          await prefs.setBool('isGymSetup', false);
           
           if (mounted) context.go('/gym-setup');
         }
@@ -135,8 +136,10 @@ class _SignupPageState extends ConsumerState<SignupPage> {
         
         if (mounted) {
           if (data['isNewUser'] == true) {
+            await prefs.setBool('isGymSetup', false);
             context.go('/gym-setup');
           } else {
+            await prefs.setBool('isGymSetup', true);
             context.go('/dashboard');
           }
         }

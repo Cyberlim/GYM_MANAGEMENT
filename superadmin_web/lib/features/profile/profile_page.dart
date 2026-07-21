@@ -11,6 +11,7 @@ import 'package:image_cropper/image_cropper.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/custom_text_field.dart';
 import '../../shared/widgets/primary_button.dart';
+import 'package:go_router/go_router.dart';
 import 'profile_provider.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
@@ -253,6 +254,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 800;
     final profile = ref.watch(profileProvider);
     
     ref.listen(profileProvider, (previous, next) {
@@ -272,7 +274,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('My Profile', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+          Row(
+            children: [
+              if (context.canPop()) ...[
+                IconButton(
+                  icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),
+                  onPressed: () => context.pop(),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text('My Profile', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+            ],
+          ),
           const SizedBox(height: 4),
           Text('Manage your personal account details and credentials.', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
           const SizedBox(height: 32),
@@ -290,54 +303,126 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               children: [
                 Text('Profile Avatar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(height: 24),
-                Row(
-                  children: [
-                    MouseRegion(
-                      cursor: profile.avatarBytes != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
-                      child: GestureDetector(
-                        onTap: profile.avatarBytes != null ? () => _showFullScreenImage(profile.avatarBytes!) : null,
-                        child: CircleAvatar(
-                          radius: 48,
-                          backgroundColor: AppTheme.accentColor,
-                          backgroundImage: profile.avatarBytes != null 
-                              ? MemoryImage(profile.avatarBytes!) 
-                              : (profile.profileImage != null && profile.profileImage!.isNotEmpty 
-                                  ? NetworkImage(profile.profileImage!) as ImageProvider 
-                                  : null),
-                          child: profile.avatarBytes == null && (profile.profileImage == null || profile.profileImage!.isEmpty) 
-                              ? Text(profile.initials, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)) 
-                              : null,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 32),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            PrimaryButton(text: 'Upload New', onPressed: _pickAndCropImage, isFullWidth: false, icon: LucideIcons.upload),
-                            const SizedBox(width: 16),
-                            OutlinedButton.icon(
-                              onPressed: () {
-                                ref.read(profileProvider.notifier).clearAvatar();
-                              },
-                              icon: const Icon(LucideIcons.trash2, size: 16),
-                              label: const Text('Remove'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.red,
-                                side: const BorderSide(color: Colors.red),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                isMobile
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          MouseRegion(
+                            cursor: profile.avatarBytes != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+                            child: GestureDetector(
+                              onTap: profile.avatarBytes != null ? () => _showFullScreenImage(profile.avatarBytes!) : null,
+                              child: CircleAvatar(
+                                radius: 48,
+                                backgroundColor: AppTheme.accentColor,
+                                backgroundImage: profile.avatarBytes != null 
+                                    ? MemoryImage(profile.avatarBytes!) 
+                                    : (profile.profileImage != null && profile.profileImage!.isNotEmpty 
+                                        ? NetworkImage(profile.profileImage!) as ImageProvider 
+                                        : null),
+                                child: profile.avatarBytes == null && (profile.profileImage == null || profile.profileImage!.isEmpty) 
+                                    ? Text(profile.initials, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white)) 
+                                    : null,
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text('Recommended size is 256x256px. Max size 2MB.', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
-                      ],
-                    ),
-                  ],
-                ),
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: PrimaryButton(text: 'Upload New', onPressed: _pickAndCropImage, isFullWidth: true, icon: LucideIcons.upload),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: SizedBox(
+                                  height: 48,
+                                  child: OutlinedButton.icon(
+                                    onPressed: () {
+                                      ref.read(profileProvider.notifier).clearAvatar();
+                                    },
+                                    icon: const Icon(LucideIcons.trash2, size: 18),
+                                    label: const Text('Remove', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.red,
+                                      side: const BorderSide(color: Colors.red),
+                                      padding: EdgeInsets.zero,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Recommended size is 256x256px. Max size 2MB.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          MouseRegion(
+                            cursor: profile.avatarBytes != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+                            child: GestureDetector(
+                              onTap: profile.avatarBytes != null ? () => _showFullScreenImage(profile.avatarBytes!) : null,
+                              child: CircleAvatar(
+                                radius: 40,
+                                backgroundColor: AppTheme.accentColor,
+                                backgroundImage: profile.avatarBytes != null 
+                                    ? MemoryImage(profile.avatarBytes!) 
+                                    : (profile.profileImage != null && profile.profileImage!.isNotEmpty 
+                                        ? NetworkImage(profile.profileImage!) as ImageProvider 
+                                        : null),
+                                child: profile.avatarBytes == null && (profile.profileImage == null || profile.profileImage!.isEmpty) 
+                                    ? Text(profile.initials, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)) 
+                                    : null,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: PrimaryButton(text: 'Upload New', onPressed: _pickAndCropImage, isFullWidth: true, icon: LucideIcons.upload),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: SizedBox(
+                                        height: 48,
+                                        child: OutlinedButton.icon(
+                                          onPressed: () {
+                                            ref.read(profileProvider.notifier).clearAvatar();
+                                          },
+                                          icon: const Icon(LucideIcons.trash2, size: 18),
+                                          label: const Text('Remove', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+                                          style: OutlinedButton.styleFrom(
+                                            foregroundColor: Colors.red,
+                                            side: const BorderSide(color: Colors.red),
+                                            padding: EdgeInsets.zero,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                Text('Recommended size is 256x256px. Max size 2MB.', style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                 
                 const SizedBox(height: 48),
                 const Divider(),
@@ -346,22 +431,35 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 Text('Personal Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                 const SizedBox(height: 24),
                 
-                Row(
-                  children: [
-                    Expanded(
-                      child: CustomTextField(controller: _nameController, label: 'Full Name', hint: 'Enter full name', prefixIcon: LucideIcons.user),
-                    ),
-                    const SizedBox(width: 24),
-                    Expanded(
-                      child: CustomTextField(
-                        controller: _emailController,
-                        label: 'Email Address', 
-                        hint: 'Enter email address', 
-                        prefixIcon: LucideIcons.mail,
+                isMobile
+                    ? Column(
+                        children: [
+                          CustomTextField(controller: _nameController, label: 'Full Name', hint: 'Enter full name', prefixIcon: LucideIcons.user),
+                          const SizedBox(height: 24),
+                          CustomTextField(
+                            controller: _emailController,
+                            label: 'Email Address', 
+                            hint: 'Enter email address', 
+                            prefixIcon: LucideIcons.mail,
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: CustomTextField(controller: _nameController, label: 'Full Name', hint: 'Enter full name', prefixIcon: LucideIcons.user),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            child: CustomTextField(
+                              controller: _emailController,
+                              label: 'Email Address', 
+                              hint: 'Enter email address', 
+                              prefixIcon: LucideIcons.mail,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
                 const SizedBox(height: 24),
                 CustomTextField(controller: _phoneController, label: 'Phone Number', hint: 'Enter phone number', prefixIcon: LucideIcons.phone),
                 
@@ -384,17 +482,25 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 
                 CustomTextField(controller: _currentPasswordController, label: 'Current Password', hint: 'Enter current password', prefixIcon: LucideIcons.lock, isPassword: true),
                 const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: CustomTextField(controller: _newPasswordController, label: 'New Password', hint: 'Enter new password', prefixIcon: LucideIcons.key, isPassword: true),
-                    ),
-                    const SizedBox(width: 24),
-                    Expanded(
-                      child: CustomTextField(controller: _confirmPasswordController, label: 'Confirm New Password', hint: 'Confirm new password', prefixIcon: LucideIcons.key, isPassword: true),
-                    ),
-                  ],
-                ),
+                isMobile
+                    ? Column(
+                        children: [
+                          CustomTextField(controller: _newPasswordController, label: 'New Password', hint: 'Enter new password', prefixIcon: LucideIcons.key, isPassword: true),
+                          const SizedBox(height: 24),
+                          CustomTextField(controller: _confirmPasswordController, label: 'Confirm New Password', hint: 'Confirm new password', prefixIcon: LucideIcons.key, isPassword: true),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          Expanded(
+                            child: CustomTextField(controller: _newPasswordController, label: 'New Password', hint: 'Enter new password', prefixIcon: LucideIcons.key, isPassword: true),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            child: CustomTextField(controller: _confirmPasswordController, label: 'Confirm New Password', hint: 'Confirm new password', prefixIcon: LucideIcons.key, isPassword: true),
+                          ),
+                        ],
+                      ),
                 
                 const SizedBox(height: 24),
                 Row(

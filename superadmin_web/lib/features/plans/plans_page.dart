@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/app_theme.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/mock/mock_data.dart';
 
@@ -448,79 +449,168 @@ class _PlansPageState extends State<PlansPage> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 800;
+
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Plans & Pricing', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                  const SizedBox(height: 4),
-                  Text('Manage subscription tiers and pricing for gym owners.', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
-                ],
-              ),
-              ElevatedButton.icon(
-                onPressed: _showCreatePlanDialog,
-                icon: Icon(LucideIcons.plus, size: 16),
-                label: Text('Create Plan', style: TextStyle(fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor, // Slate Teal
-                  foregroundColor: Colors.white,
-                  elevation: Theme.of(context).brightness == Brightness.dark ? 8 : 2,
-                  shadowColor: Theme.of(context).brightness == Brightness.dark ? AppTheme.primaryColor.withValues(alpha: 0.6) : null,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-              )
-            ],
-          ),
-          const SizedBox(height: 32),
-          
-          // Billing Cycle Toggle
-          Row(
-            children: [
-              const Text('Billing cycle', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-              const SizedBox(width: 16),
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.surface,
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Theme.of(context).dividerColor),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+              // Header
+              if (isMobile)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildToggleOption('monthly', 'Monthly', LucideIcons.calendar),
-                    _buildToggleOption('quarterly', 'Quarterly', LucideIcons.calendarDays),
-                    _buildToggleOption('annual', 'Annually', LucideIcons.calendarRange),
+                    Row(
+                      children: [
+                        if (context.canPop()) ...[
+                          IconButton(
+                            icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),
+                            onPressed: () => context.pop(),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Text('Plans & Pricing', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text('Manage subscription tiers and pricing for gym owners.', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+                    const SizedBox(height: 16),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: ElevatedButton.icon(
+                        onPressed: _showCreatePlanDialog,
+                        icon: Icon(LucideIcons.plus, size: 16),
+                        label: Text('Create Plan', style: TextStyle(fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor, // Slate Teal
+                          foregroundColor: Colors.white,
+                          elevation: Theme.of(context).brightness == Brightness.dark ? 8 : 2,
+                          shadowColor: Theme.of(context).brightness == Brightness.dark ? AppTheme.primaryColor.withValues(alpha: 0.6) : null,
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            if (context.canPop()) ...[
+                              IconButton(
+                                icon: Icon(LucideIcons.arrowLeft, color: Theme.of(context).colorScheme.onSurface),
+                                onPressed: () => context.pop(),
+                              ),
+                              const SizedBox(width: 8),
+                            ],
+                            Text('Plans & Pricing', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text('Manage subscription tiers and pricing for gym owners.', style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6))),
+                      ],
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _showCreatePlanDialog,
+                      icon: Icon(LucideIcons.plus, size: 16),
+                      label: Text('Create Plan', style: TextStyle(fontWeight: FontWeight.bold)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor, // Slate Teal
+                        foregroundColor: Colors.white,
+                        elevation: Theme.of(context).brightness == Brightness.dark ? 8 : 2,
+                        shadowColor: Theme.of(context).brightness == Brightness.dark ? AppTheme.primaryColor.withValues(alpha: 0.6) : null,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    )
                   ],
                 ),
+              const SizedBox(height: 32),
+              
+              // Billing Cycle Toggle
+              if (isMobile)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Billing cycle', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 16),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: Theme.of(context).dividerColor),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildToggleOption('monthly', 'Monthly', LucideIcons.calendar),
+                            _buildToggleOption('quarterly', 'Quarterly', LucideIcons.calendarDays),
+                            _buildToggleOption('annual', 'Annually', LucideIcons.calendarRange),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Row(
+                  children: [
+                    const Text('Billing cycle', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                    const SizedBox(width: 16),
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: Theme.of(context).dividerColor),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4)),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _buildToggleOption('monthly', 'Monthly', LucideIcons.calendar),
+                          _buildToggleOption('quarterly', 'Quarterly', LucideIcons.calendarDays),
+                          _buildToggleOption('annual', 'Annually', LucideIcons.calendarRange),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              const SizedBox(height: 32),
+              
+              // Plans Grid
+              Wrap(
+                spacing: 24,
+                runSpacing: 24,
+                children: _plans.asMap().entries.map((entry) {
+                  int index = entry.key;
+                  Map<String, dynamic> plan = entry.value;
+                  return _buildPlanCard(index, plan, isMobile);
+                }).toList(),
               ),
             ],
           ),
-          const SizedBox(height: 32),
-          
-          // Plans Grid
-          Wrap(
-            spacing: 24,
-            runSpacing: 24,
-            children: _plans.asMap().entries.map((entry) {
-              int index = entry.key;
-              Map<String, dynamic> plan = entry.value;
-              return _buildPlanCard(index, plan);
-            }).toList(),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -558,7 +648,7 @@ class _PlansPageState extends State<PlansPage> {
     );
   }
 
-  Widget _buildPlanCard(int index, Map<String, dynamic> plan) {
+  Widget _buildPlanCard(int index, Map<String, dynamic> plan, bool isMobile) {
     final bool isPopular = plan['isPopular'];
     final bool isActive = plan['isActive'];
     final bool isDiscountActive = plan['isDiscountActive'] ?? false;
@@ -598,17 +688,21 @@ class _PlansPageState extends State<PlansPage> {
       int discAmount = int.tryParse(adjustedDiscountPrice.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
       String curr = plan['price'].toString().replaceAll(RegExp(r'[0-9\s]'), '');
       if (curr.isEmpty) curr = '₹';
-      billingSubtext = 'Billed every 3 months (${curr}${isDiscountActive ? discAmount * 3 : baseAmount * 3} total)';
+      billingSubtext = isDiscountActive 
+          ? 'Billed $curr${discAmount * 3} every 3 months' 
+          : 'Billed $curr${baseAmount * 3} every 3 months';
     } else if (_billingCycle == 'annual') {
       int baseAmount = int.tryParse(adjustedPrice.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
       int discAmount = int.tryParse(adjustedDiscountPrice.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
       String curr = plan['price'].toString().replaceAll(RegExp(r'[0-9\s]'), '');
       if (curr.isEmpty) curr = '₹';
-      billingSubtext = 'Billed annually (${curr}${isDiscountActive ? discAmount * 12 : baseAmount * 12} total)';
+      billingSubtext = isDiscountActive 
+          ? 'Billed $curr${discAmount * 12} every year' 
+          : 'Billed $curr${baseAmount * 12} every year';
     }
 
     return Container(
-      width: 340,
+      width: isMobile ? double.infinity : 340,
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(24),

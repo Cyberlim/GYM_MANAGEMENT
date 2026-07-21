@@ -8,11 +8,13 @@ class GymOwnerSelection {
   final String id;
   final String ownerName;
   final String gymName;
+  final String status;
 
   GymOwnerSelection({
     required this.id,
     required this.ownerName,
     required this.gymName,
+    this.status = 'active',
   });
 
   factory GymOwnerSelection.fromJson(Map<String, dynamic> json) {
@@ -20,6 +22,7 @@ class GymOwnerSelection {
       id: json['id'] ?? '',
       ownerName: json['ownerName'] ?? '',
       gymName: json['gymName'] ?? '',
+      status: json['status'] ?? 'active',
     );
   }
 }
@@ -55,12 +58,14 @@ class BroadcastStatusItem {
   final String ownerName;
   final String gymName;
   final bool isRead;
+  final DateTime? readAt;
 
   BroadcastStatusItem({
     required this.userId,
     required this.ownerName,
     required this.gymName,
     required this.isRead,
+    this.readAt,
   });
 
   factory BroadcastStatusItem.fromJson(Map<String, dynamic> json) {
@@ -69,6 +74,7 @@ class BroadcastStatusItem {
       ownerName: json['ownerName'] ?? '',
       gymName: json['gymName'] ?? '',
       isRead: json['isRead'] ?? false,
+      readAt: json['readAt'] != null ? DateTime.parse(json['readAt']) : null,
     );
   }
 }
