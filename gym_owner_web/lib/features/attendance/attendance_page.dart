@@ -74,6 +74,28 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
                     color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                   ),
                 ),
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(LucideIcons.info, size: 14, color: Colors.orange[800]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Note: Attendance records can only be modified up to 2 days retroactively.',
+                          style: TextStyle(fontSize: 12, color: Colors.orange[800], fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -138,7 +160,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
             ),
           ),
 
-          Expanded(
+          Flexible(
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(
@@ -148,48 +170,52 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
               ),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final listWidth = constraints.maxWidth > 600 ? constraints.maxWidth : 600.0;
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints.tightFor(
-                        width: listWidth,
-                        height: constraints.maxHeight,
-                      ),
-                      child: selectedTab == 'Members'
-                          ? (filteredMembers.isEmpty
-                              ? const Center(child: Text('No members found.'))
-                              : ListView.separated(
-                                  padding: const EdgeInsets.all(16),
-                                  itemCount: filteredMembers.length,
-                                  separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                                  itemBuilder: (context, index) {
-                                    return _AttendanceRow(member: filteredMembers[index], date: selectedDate);
-                                  },
+                  final isMobile = MediaQuery.of(context).size.width < 900;
+                  final listWidth = isMobile ? constraints.maxWidth : (constraints.maxWidth > 800 ? constraints.maxWidth : 800.0);
+                  
+                  Widget content = selectedTab == 'Members'
+                      ? (filteredMembers.isEmpty
+                          ? const Center(child: Text('No members found.'))
+                          : SingleChildScrollView(
+                              padding: const EdgeInsets.all(16),
+                              child: Wrap(
+                                spacing: 16,
+                                runSpacing: 16,
+                                    children: filteredMembers.map((member) => SizedBox(
+                                      width: constraints.maxWidth < 432 ? constraints.maxWidth - 32 : 400,
+                                      child: _AttendanceRow(member: member, date: selectedDate)
+                                    )).toList(),
+                                  ),
                                 ))
                           : selectedTab == 'Staff'
                               ? (filteredStaff.isEmpty
                                   ? const Center(child: Text('No staff found.'))
-                                  : ListView.separated(
+                                  : SingleChildScrollView(
                                       padding: const EdgeInsets.all(16),
-                                      itemCount: filteredStaff.length,
-                                      separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                                      itemBuilder: (context, index) {
-                                        return _StaffAttendanceRow(staff: filteredStaff[index], date: selectedDate);
-                                      },
+                                      child: Wrap(
+                                        spacing: 16,
+                                        runSpacing: 16,
+                                        children: filteredStaff.map((staff) => SizedBox(
+                                          width: constraints.maxWidth < 432 ? constraints.maxWidth - 32 : 400,
+                                          child: _StaffAttendanceRow(staff: staff, date: selectedDate)
+                                        )).toList(),
+                                      ),
                                     ))
                               : (filteredTrainers.isEmpty
                                   ? const Center(child: Text('No trainers found.'))
-                                  : ListView.separated(
+                                  : SingleChildScrollView(
                                       padding: const EdgeInsets.all(16),
-                                      itemCount: filteredTrainers.length,
-                                      separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                                      itemBuilder: (context, index) {
-                                        return _TrainerAttendanceRow(trainer: filteredTrainers[index], date: selectedDate);
-                                      },
-                                    )),
-                    ),
-                  );
+                                      child: Wrap(
+                                        spacing: 16,
+                                        runSpacing: 16,
+                                        children: filteredTrainers.map((trainer) => SizedBox(
+                                          width: constraints.maxWidth < 432 ? constraints.maxWidth - 32 : 400,
+                                          child: _TrainerAttendanceRow(trainer: trainer, date: selectedDate)
+                                        )).toList(),
+                                  ),
+                                ));
+
+                  return content;
                 }
               ),
             ),
@@ -300,106 +326,105 @@ class _AttendanceRow extends ConsumerWidget {
     // We also need to watch attendanceProvider to trigger rebuilds when state changes
     ref.watch(attendanceProvider);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-            child: Text(
-              member.name.substring(0, 1).toUpperCase(),
-              style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 4),
-                Text(
-                  member.email,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                CircleAvatar(
+                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  child: Text(
+                    member.name.substring(0, 1).toUpperCase(),
+                    style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Text(
+                        member.email,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: planColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    member.membershipPlan,
+                    style: TextStyle(color: planColor, fontSize: 12, fontWeight: FontWeight.w500),
+                  ),
                 ),
               ],
             ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: planColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  member.membershipPlan,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: planColor,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (record?.checkInTime != null)
+                  Text(
+                    'In at ${DateFormat('hh:mm a').format(record!.checkInTime!)}',
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 13),
+                  )
+                else
+                  const SizedBox(),
+                SegmentedButton<String>(
+                  emptySelectionAllowed: true,
+                  segments: [
+                    ButtonSegment(
+                      value: 'Present',
+                      label: const Text('Present'),
+                      icon: Icon(LucideIcons.checkCircle2, color: record?.status == 'Present' ? Colors.white : Colors.green),
+                    ),
+                    ButtonSegment(
+                      value: 'Absent',
+                      label: const Text('Absent'),
+                      icon: Icon(LucideIcons.xCircle, color: record?.status == 'Absent' ? Colors.white : Colors.redAccent),
+                    ),
+                  ],
+                  selected: record != null ? {record.status} : <String>{},
+                  onSelectionChanged: (Set<String> selection) {
+                    if (selection.isNotEmpty) {
+                      ref.read(attendanceProvider.notifier).markAttendance(member.id, date, selection.first);
+                    }
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        if (record?.status == 'Present') return Colors.green.shade800;
+                        if (record?.status == 'Absent') return Colors.red.shade800;
+                      }
+                      return Colors.transparent;
+                    }),
+                    foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return Colors.white;
+                      }
+                      return Theme.of(context).colorScheme.onSurface;
+                    }),
                   ),
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
-              ),
+              ],
             ),
-          ),
-          const SizedBox(width: 24),
-          if (record?.checkInTime != null)
-            Expanded(
-              flex: 1,
-              child: Text(
-                'In at ${DateFormat('hh:mm a').format(record!.checkInTime!)}',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 13),
-              ),
-            )
-          else
-            const Expanded(flex: 1, child: SizedBox()),
-          SegmentedButton<String>(
-            emptySelectionAllowed: true,
-            segments: [
-              ButtonSegment(
-                value: 'Present',
-                label: const Text('Present'),
-                icon: Icon(LucideIcons.checkCircle2, color: record?.status == 'Present' ? Colors.white : Colors.green),
-              ),
-              ButtonSegment(
-                value: 'Absent',
-                label: const Text('Absent'),
-                icon: Icon(LucideIcons.xCircle, color: record?.status == 'Absent' ? Colors.white : Colors.redAccent),
-              ),
-            ],
-            selected: record != null ? {record.status} : <String>{},
-            onSelectionChanged: (Set<String> selection) {
-              if (selection.isNotEmpty) {
-                ref.read(attendanceProvider.notifier).markAttendance(member.id, date, selection.first);
-              }
-            },
-            style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                if (states.contains(WidgetState.selected)) {
-                  if (record?.status == 'Present') return Colors.green.shade800;
-                  if (record?.status == 'Absent') return Colors.red.shade800;
-                }
-                return Colors.transparent;
-              }),
-              foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return Colors.white;
-                }
-                return Theme.of(context).colorScheme.onSurface;
-              }),
-            ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
   }
 }
 
@@ -417,107 +442,106 @@ class _StaffAttendanceRow extends ConsumerWidget {
     // We also need to watch attendanceProvider to trigger rebuilds when state changes
     ref.watch(attendanceProvider);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: Colors.blue.withOpacity(0.1),
-            backgroundImage: staff.imageUrl != null && staff.imageUrl!.isNotEmpty ? NetworkImage(staff.imageUrl!) : null,
-            child: (staff.imageUrl == null || staff.imageUrl!.isEmpty) ? Text(
-              staff.name.substring(0, 1).toUpperCase(),
-              style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
-            ) : null,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(staff.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 4),
-                Text(
-                  staff.email,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                CircleAvatar(
+                  backgroundColor: Colors.blue.withOpacity(0.1),
+                  backgroundImage: staff.imageUrl != null && staff.imageUrl!.isNotEmpty ? NetworkImage(staff.imageUrl!) : null,
+                  child: (staff.imageUrl == null || staff.imageUrl!.isEmpty) ? Text(
+                    staff.name.substring(0, 1).toUpperCase(),
+                    style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold),
+                  ) : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(staff.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Text(
+                        staff.email,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    staff.role,
+                    style: const TextStyle(color: Colors.blue, fontSize: 12, fontWeight: FontWeight.w500),
+                  ),
                 ),
               ],
             ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  staff.role,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.blue,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (record?.checkInTime != null)
+                  Text(
+                    'In at ${DateFormat('hh:mm a').format(record!.checkInTime!)}',
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 13),
+                  )
+                else
+                  const SizedBox(),
+                SegmentedButton<String>(
+                  emptySelectionAllowed: true,
+                  segments: [
+                    ButtonSegment(
+                      value: 'Present',
+                      label: const Text('Present'),
+                      icon: Icon(LucideIcons.checkCircle2, color: record?.status == 'Present' ? Colors.white : Colors.green),
+                    ),
+                    ButtonSegment(
+                      value: 'Absent',
+                      label: const Text('Absent'),
+                      icon: Icon(LucideIcons.xCircle, color: record?.status == 'Absent' ? Colors.white : Colors.redAccent),
+                    ),
+                  ],
+                  selected: record != null ? {record.status} : <String>{},
+                  onSelectionChanged: (Set<String> selection) {
+                    if (selection.isNotEmpty) {
+                      ref.read(attendanceProvider.notifier).markAttendance(staff.id, date, selection.first);
+                    }
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        if (record?.status == 'Present') return Colors.green.shade800;
+                        if (record?.status == 'Absent') return Colors.red.shade800;
+                      }
+                      return Colors.transparent;
+                    }),
+                    foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return Colors.white;
+                      }
+                      return Theme.of(context).colorScheme.onSurface;
+                    }),
                   ),
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
-              ),
+              ],
             ),
-          ),
-          const SizedBox(width: 24),
-          if (record?.checkInTime != null)
-            Expanded(
-              flex: 1,
-              child: Text(
-                'In at ${DateFormat('hh:mm a').format(record!.checkInTime!)}',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 13),
-              ),
-            )
-          else
-            const Expanded(flex: 1, child: SizedBox()),
-          SegmentedButton<String>(
-            emptySelectionAllowed: true,
-            segments: [
-              ButtonSegment(
-                value: 'Present',
-                label: const Text('Present'),
-                icon: Icon(LucideIcons.checkCircle2, color: record?.status == 'Present' ? Colors.white : Colors.green),
-              ),
-              ButtonSegment(
-                value: 'Absent',
-                label: const Text('Absent'),
-                icon: Icon(LucideIcons.xCircle, color: record?.status == 'Absent' ? Colors.white : Colors.redAccent),
-              ),
-            ],
-            selected: record != null ? {record.status} : <String>{},
-            onSelectionChanged: (Set<String> selection) {
-              if (selection.isNotEmpty) {
-                ref.read(attendanceProvider.notifier).markAttendance(staff.id, date, selection.first);
-              }
-            },
-            style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                if (states.contains(WidgetState.selected)) {
-                  if (record?.status == 'Present') return Colors.green.shade800;
-                  if (record?.status == 'Absent') return Colors.red.shade800;
-                }
-                return Colors.transparent;
-              }),
-              foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return Colors.white;
-                }
-                return Theme.of(context).colorScheme.onSurface;
-              }),
-            ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
   }
 }
 
@@ -535,106 +559,105 @@ class _TrainerAttendanceRow extends ConsumerWidget {
     // We also need to watch attendanceProvider to trigger rebuilds when state changes
     ref.watch(attendanceProvider);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: Colors.orange.withOpacity(0.1),
-            backgroundImage: trainer.imageUrl != null && trainer.imageUrl!.isNotEmpty ? NetworkImage(trainer.imageUrl!) : null,
-            child: (trainer.imageUrl == null || trainer.imageUrl!.isEmpty) ? Text(
-              trainer.name.substring(0, 1).toUpperCase(),
-              style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
-            ) : null,
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            flex: 2,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(trainer.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 4),
-                Text(
-                  trainer.email,
-                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                CircleAvatar(
+                  backgroundColor: Colors.orange.withOpacity(0.1),
+                  backgroundImage: trainer.imageUrl != null && trainer.imageUrl!.isNotEmpty ? NetworkImage(trainer.imageUrl!) : null,
+                  child: (trainer.imageUrl == null || trainer.imageUrl!.isEmpty) ? Text(
+                    trainer.name.substring(0, 1).toUpperCase(),
+                    style: const TextStyle(color: Colors.orange, fontWeight: FontWeight.bold),
+                  ) : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(trainer.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Text(
+                        trainer.email,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    trainer.specialization,
+                    style: const TextStyle(color: Colors.orange, fontSize: 12, fontWeight: FontWeight.w500),
+                  ),
                 ),
               ],
             ),
-          ),
-          Expanded(
-            flex: 1,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  trainer.specialization,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.orange,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (record?.checkInTime != null)
+                  Text(
+                    'In at ${DateFormat('hh:mm a').format(record!.checkInTime!)}',
+                    style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 13),
+                  )
+                else
+                  const SizedBox(),
+                SegmentedButton<String>(
+                  emptySelectionAllowed: true,
+                  segments: [
+                    ButtonSegment(
+                      value: 'Present',
+                      label: const Text('Present'),
+                      icon: Icon(LucideIcons.checkCircle2, color: record?.status == 'Present' ? Colors.white : Colors.green),
+                    ),
+                    ButtonSegment(
+                      value: 'Absent',
+                      label: const Text('Absent'),
+                      icon: Icon(LucideIcons.xCircle, color: record?.status == 'Absent' ? Colors.white : Colors.redAccent),
+                    ),
+                  ],
+                  selected: record != null ? {record.status} : <String>{},
+                  onSelectionChanged: (Set<String> selection) {
+                    if (selection.isNotEmpty) {
+                      ref.read(attendanceProvider.notifier).markAttendance(trainer.id, date, selection.first);
+                    }
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        if (record?.status == 'Present') return Colors.green.shade800;
+                        if (record?.status == 'Absent') return Colors.red.shade800;
+                      }
+                      return Colors.transparent;
+                    }),
+                    foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return Colors.white;
+                      }
+                      return Theme.of(context).colorScheme.onSurface;
+                    }),
                   ),
-                  maxLines: 1, overflow: TextOverflow.ellipsis,
                 ),
-              ),
+              ],
             ),
-          ),
-          const SizedBox(width: 24),
-          if (record?.checkInTime != null)
-            Expanded(
-              flex: 1,
-              child: Text(
-                'In at ${DateFormat('hh:mm a').format(record!.checkInTime!)}',
-                style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 13),
-              ),
-            )
-          else
-            const Expanded(flex: 1, child: SizedBox()),
-          SegmentedButton<String>(
-            emptySelectionAllowed: true,
-            segments: [
-              ButtonSegment(
-                value: 'Present',
-                label: const Text('Present'),
-                icon: Icon(LucideIcons.checkCircle2, color: record?.status == 'Present' ? Colors.white : Colors.green),
-              ),
-              ButtonSegment(
-                value: 'Absent',
-                label: const Text('Absent'),
-                icon: Icon(LucideIcons.xCircle, color: record?.status == 'Absent' ? Colors.white : Colors.redAccent),
-              ),
-            ],
-            selected: record != null ? {record.status} : <String>{},
-            onSelectionChanged: (Set<String> selection) {
-              if (selection.isNotEmpty) {
-                ref.read(attendanceProvider.notifier).markAttendance(trainer.id, date, selection.first);
-              }
-            },
-            style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                if (states.contains(WidgetState.selected)) {
-                  if (record?.status == 'Present') return Colors.green.shade800;
-                  if (record?.status == 'Absent') return Colors.red.shade800;
-                }
-                return Colors.transparent;
-              }),
-              foregroundColor: WidgetStateProperty.resolveWith<Color>((states) {
-                if (states.contains(WidgetState.selected)) {
-                  return Colors.white;
-                }
-                return Theme.of(context).colorScheme.onSurface;
-              }),
-            ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
   }
 }

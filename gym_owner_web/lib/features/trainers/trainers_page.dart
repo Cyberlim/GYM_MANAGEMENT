@@ -6,14 +6,18 @@ import 'package:gym_owner_web/data/models/gym_owner_models.dart';
 import 'package:gym_owner_web/shared/widgets/hover_zoom_effect.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-
+import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:gym_owner_web/features/members/providers/members_provider.dart';
 class TrainersPage extends ConsumerWidget {
   const TrainersPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final trainersAsync = ref.watch(filteredTrainersProvider);
-    final isListView = ref.watch(isTrainerListViewProvider);
+    final isListViewSetting = ref.watch(isTrainerListViewProvider);
+    final isMobile = MediaQuery.of(context).size.width < 900;
+    final isListView = isMobile ? false : isListViewSetting;
     final action = GoRouterState.of(context).uri.queryParameters['action'];
 
     if (action == 'add') {
@@ -28,7 +32,23 @@ class TrainersPage extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(context, ref, isListView),
+          Text(
+            'Trainers',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Manage your gym trainers',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildHeader(context, ref, isListViewSetting, isMobile),
           const SizedBox(height: 24),
           Expanded(
             child: trainersAsync.when(
@@ -113,74 +133,76 @@ class TrainersPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, WidgetRef ref, bool isListView) {
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      alignment: WrapAlignment.spaceBetween,
+  Widget _buildHeader(BuildContext context, WidgetRef ref, bool isListView, bool isMobile) {
+    final searchField = TextField(
+      onChanged: (value) => ref.read(trainerSearchQueryProvider.notifier).updateQuery(value),
+      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      decoration: InputDecoration(
+        hintText: 'Search trainers...',
+        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+        prefixIcon: Icon(LucideIcons.search, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Theme.of(context).dividerColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Theme.of(context).dividerColor),
+        ),
+      ),
+    );
+
+    return Row(
       children: [
-        SizedBox(
-          width: 300,
-          child: TextField(
-            onChanged: (value) => ref.read(trainerSearchQueryProvider.notifier).updateQuery(value),
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            decoration: InputDecoration(
-              hintText: 'Search trainers...',
-              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-              prefixIcon: Icon(LucideIcons.search, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surface,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Theme.of(context).dividerColor),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Theme.of(context).dividerColor),
-              ),
+        if (isMobile)
+          Expanded(child: searchField)
+        else
+          SizedBox(width: 300, child: searchField),
+        if (isMobile)
+          const SizedBox(width: 16)
+        else
+          const Spacer(),
+        if (!isMobile) ...[
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Theme.of(context).dividerColor),
+            ),
+            child: ToggleButtons(
+              isSelected: [isListView, !isListView],
+              onPressed: (index) {
+                ref.read(isTrainerListViewProvider.notifier).setMode(index == 0);
+              },
+              borderRadius: BorderRadius.circular(11),
+              fillColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              selectedColor: Theme.of(context).colorScheme.primary,
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+              children: const [
+                Icon(LucideIcons.list, size: 20),
+                Icon(LucideIcons.layoutGrid, size: 20),
+              ],
             ),
           ),
-        ),
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Theme.of(context).dividerColor),
-              ),
-              child: ToggleButtons(
-                isSelected: [isListView, !isListView],
-                onPressed: (index) {
-                  ref.read(isTrainerListViewProvider.notifier).setMode(index == 0);
-                },
-                borderRadius: BorderRadius.circular(11),
-                fillColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                selectedColor: Theme.of(context).colorScheme.primary,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
-                children: const [
-                  Icon(LucideIcons.list, size: 20),
-                  Icon(LucideIcons.layoutGrid, size: 20),
-                ],
-              ),
+          const SizedBox(width: 16),
+        ],
+        SizedBox(
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: () => showTrainerDialog(context, ref),
+            icon: const Icon(LucideIcons.plus, size: 18),
+            label: const Text('Add Trainer'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            ElevatedButton.icon(
-              onPressed: () => showTrainerDialog(context, ref),
-              icon: const Icon(LucideIcons.plus, size: 18),
-              label: const Text('Add Trainer'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ],
+          ),
         ),
       ],
     );
@@ -197,7 +219,10 @@ void showTrainerDialog(BuildContext context, WidgetRef ref, {Trainer? trainerToE
   double rating = trainerToEdit?.rating ?? 5.0;
   String? pickedImagePath = trainerToEdit?.imageUrl;
   List<String> pickedCertificates = List.from(trainerToEdit?.certificates ?? []);
+  DateTime? selectedDob = trainerToEdit?.dob;
   final ImagePicker picker = ImagePicker();
+  bool isUploadingProfile = false;
+  bool isUploadingCert = false;
 
   showDialog(
     context: context,
@@ -219,18 +244,37 @@ void showTrainerDialog(BuildContext context, WidgetRef ref, {Trainer? trainerToE
                       onTap: () async {
                         final XFile? image = await picker.pickImage(source: ImageSource.gallery);
                         if (image != null) {
-                          setState(() {
-                            pickedImagePath = image.path;
-                          });
+                          setState(() => isUploadingProfile = true);
+                          try {
+                            final bytes = await image.readAsBytes();
+                            final url = await ref.read(apiServiceProvider).uploadFile(bytes, image.name);
+                            if (url != null) {
+                              if (pickedImagePath != null && pickedImagePath!.startsWith('http') && !pickedImagePath!.contains('unsplash.com')) {
+                                try { await ref.read(apiServiceProvider).deleteFile(pickedImagePath!); } catch (e) { debugPrint('Failed to delete old image: $e'); }
+                              }
+                              setState(() => pickedImagePath = url);
+                            }
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e'), backgroundColor: Colors.red));
+                          } finally {
+                            setState(() => isUploadingProfile = false);
+                          }
                         }
                       },
-                      child: CircleAvatar(
-                        radius: 40,
-                        backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                        backgroundImage: pickedImagePath != null ? NetworkImage(pickedImagePath!) : null,
-                        child: pickedImagePath == null 
-                            ? Icon(LucideIcons.camera, color: Theme.of(context).colorScheme.primary)
-                            : null,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CircleAvatar(
+                            radius: 40,
+                            backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                            backgroundImage: pickedImagePath != null ? NetworkImage(pickedImagePath!) : null,
+                            child: pickedImagePath == null 
+                                ? Icon(LucideIcons.camera, color: Theme.of(context).colorScheme.primary)
+                                : null,
+                          ),
+                          if (isUploadingProfile)
+                            const CircularProgressIndicator(),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -248,10 +292,36 @@ void showTrainerDialog(BuildContext context, WidgetRef ref, {Trainer? trainerToE
                       decoration: const InputDecoration(labelText: 'Specialization (e.g. Yoga, Crossfit)'),
                     ),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: emailController,
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                      decoration: const InputDecoration(labelText: 'Email Address'),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: emailController,
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                            decoration: const InputDecoration(labelText: 'Email Address'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final date = await showDatePicker(
+                                context: context,
+                                initialDate: selectedDob ?? DateTime.now(),
+                                firstDate: DateTime(1900),
+                                lastDate: DateTime.now(),
+                              );
+                              if (date != null) setState(() => selectedDob = date);
+                            },
+                            child: InputDecorator(
+                              decoration: const InputDecoration(
+                                labelText: 'Date of Birth (Optional)',
+                              ),
+                              child: Text(selectedDob != null ? '${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}' : 'Select Date', maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -283,59 +353,155 @@ void showTrainerDialog(BuildContext context, WidgetRef ref, {Trainer? trainerToE
                     ),
                     const SizedBox(height: 16),
                     // Certificates Uploader
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('Certificates', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        ...pickedCertificates.map((cert) => Stack(
-                          children: [
-                            Container(
-                              width: 80,
-                              height: 60,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                image: DecorationImage(image: NetworkImage(cert), fit: BoxFit.cover),
-                              ),
-                            ),
-                            Positioned(
-                              top: 0,
-                              right: 0,
-                              child: GestureDetector(
-                                onTap: () => setState(() => pickedCertificates.remove(cert)),
-                                child: Container(
-                                  padding: const EdgeInsets.all(2),
-                                  decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                                  child: const Icon(LucideIcons.x, size: 12, color: Colors.white),
-                                ),
-                              ),
-                            ),
-                          ],
-                        )),
-                        GestureDetector(
-                          onTap: () async {
+                        Text('Certificates', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                        TextButton.icon(
+                          onPressed: () async {
                             final XFile? cert = await picker.pickImage(source: ImageSource.gallery);
                             if (cert != null) {
-                              setState(() => pickedCertificates.add(cert.path));
+                              setState(() => isUploadingCert = true);
+                              try {
+                                final bytes = await cert.readAsBytes();
+                                final url = await ref.read(apiServiceProvider).uploadFile(bytes, cert.name);
+                                if (url != null) {
+                                  setState(() => pickedCertificates.add(url));
+                                }
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e'), backgroundColor: Colors.red));
+                              } finally {
+                                setState(() => isUploadingCert = false);
+                              }
                             }
                           },
-                          child: Container(
-                            width: 80,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface,
-                              border: Border.all(color: Theme.of(context).dividerColor, style: BorderStyle.solid),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(LucideIcons.upload, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-                          ),
+                          icon: isUploadingCert 
+                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                              : Icon(LucideIcons.upload, size: 16, color: Theme.of(context).colorScheme.primary),
+                          label: Text(isUploadingCert ? 'Uploading...' : 'Upload', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    if (pickedCertificates.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Theme.of(context).dividerColor, style: BorderStyle.solid),
+                        ),
+                        child: Center(
+                          child: Text('No document uploaded', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                        ),
+                      )
+                    else
+                      Column(
+                        children: pickedCertificates.map((cert) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Theme.of(context).dividerColor),
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    image: DecorationImage(image: NetworkImage(cert), fit: BoxFit.cover),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text('Certificate', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                                ),
+                                IconButton(
+                                  icon: const Icon(LucideIcons.eye, size: 18),
+                                  tooltip: 'View',
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => Dialog(
+                                        backgroundColor: Colors.transparent,
+                                        insetPadding: EdgeInsets.zero,
+                                        child: Stack(
+                                          alignment: Alignment.center,
+                                          children: [
+                                            InteractiveViewer(
+                                              minScale: 1.0, maxScale: 5.0,
+                                              child: Image.network(cert, fit: BoxFit.contain),
+                                            ),
+                                            Positioned(
+                                              top: 16, right: 16,
+                                              child: IconButton(
+                                                icon: const Icon(LucideIcons.x, color: Colors.white, size: 30),
+                                                onPressed: () => Navigator.pop(context),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(LucideIcons.download, size: 18),
+                                  tooltip: 'Download',
+                                  onPressed: () async {
+                                    final url = Uri.parse(cert);
+                                    if (await canLaunchUrl(url)) {
+                                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                                    }
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(LucideIcons.trash2, size: 18, color: Colors.red),
+                                  tooltip: 'Remove',
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (ctx) => AlertDialog(
+                                        backgroundColor: Theme.of(context).colorScheme.surface,
+                                        title: const Text('Remove Certificate?'),
+                                        content: const Text('Are you sure you want to remove this certificate?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(ctx),
+                                            child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                                          ),
+                                          TextButton(
+                                            onPressed: () async {
+                                              try {
+                                                await ref.read(apiServiceProvider).deleteFile(cert);
+                                              } catch (e) {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                    SnackBar(content: Text('Warning: Failed to delete file from cloud: $e'), backgroundColor: Colors.orange),
+                                                  );
+                                                }
+                                              }
+                                              setState(() => pickedCertificates.remove(cert));
+                                              if (context.mounted) {
+                                                Navigator.pop(ctx);
+                                              }
+                                            },
+                                            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        )).toList(),
+                      ),
                     const SizedBox(height: 16),
                     Row(
                       children: [
@@ -372,6 +538,7 @@ void showTrainerDialog(BuildContext context, WidgetRef ref, {Trainer? trainerToE
                         specialization: specController.text,
                         assignedMembers: trainerToEdit?.assignedMembers ?? 0,
                         rating: rating,
+                        dob: selectedDob,
                         imageUrl: pickedImagePath,
                         email: emailController.text,
                         phone: phoneController.text,
@@ -439,7 +606,7 @@ class _TrainerCard extends ConsumerWidget {
                   child: InteractiveViewer(
                     minScale: 1.0,
                     maxScale: 5.0,
-                    child: trainer.imageUrl != null
+                    child: trainer.imageUrl != null && trainer.imageUrl!.isNotEmpty
                         ? Image.network(trainer.imageUrl!, fit: BoxFit.cover)
                         : Container(
                             color: Theme.of(context).colorScheme.primary,
@@ -466,9 +633,12 @@ class _TrainerCard extends ConsumerWidget {
 
     return HoverZoomEffect(
       scale: 1.03,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+      child: InkWell(
+        onTap: () => showTrainerDetailsDialog(context, ref, trainer),
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.3)),
           boxShadow: [
@@ -549,8 +719,8 @@ class _TrainerCard extends ConsumerWidget {
                           child: CircleAvatar(
                             radius: 36,
                             backgroundColor: specColor.withOpacity(0.1),
-                            backgroundImage: trainer.imageUrl != null ? NetworkImage(trainer.imageUrl!) : null,
-                            child: trainer.imageUrl == null
+                            backgroundImage: trainer.imageUrl != null && trainer.imageUrl!.isNotEmpty ? NetworkImage(trainer.imageUrl!) : null,
+                            child: trainer.imageUrl == null || trainer.imageUrl!.isEmpty
                                 ? Text(
                                     trainer.name.isNotEmpty ? trainer.name[0].toUpperCase() : '?',
                                     style: TextStyle(color: specColor, fontSize: 28, fontWeight: FontWeight.bold),
@@ -661,6 +831,7 @@ class _TrainerCard extends ConsumerWidget {
           ],
         ),
       ),
+      ),
     );
   }
 }
@@ -675,7 +846,7 @@ class _TrainerTableRow extends ConsumerWidget {
     return HoverZoomEffect(
       scale: 1.01,
       child: InkWell(
-        onTap: () => context.push('/trainer-details/${trainer.id}'),
+        onTap: () => showTrainerDetailsDialog(context, ref, trainer),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           child: Row(
@@ -688,8 +859,8 @@ class _TrainerTableRow extends ConsumerWidget {
                     CircleAvatar(
                       radius: 20,
                       backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                      backgroundImage: trainer.imageUrl != null ? NetworkImage(trainer.imageUrl!) : null,
-                      child: trainer.imageUrl == null
+                      backgroundImage: trainer.imageUrl != null && trainer.imageUrl!.isNotEmpty ? NetworkImage(trainer.imageUrl!) : null,
+                      child: trainer.imageUrl == null || trainer.imageUrl!.isEmpty
                           ? Text(
                               trainer.name.isNotEmpty ? trainer.name[0].toUpperCase() : '?',
                               style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
@@ -794,4 +965,252 @@ class _TrainerTableRow extends ConsumerWidget {
       ),
     );
   }
+}
+
+void showTrainerDetailsDialog(BuildContext context, WidgetRef ref, Trainer trainer) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return Dialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Container(
+          width: 400,
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header with edit icon
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Trainer Details', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                  IconButton(
+                    icon: const Icon(LucideIcons.edit3, size: 20),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      showTrainerDialog(context, ref, trainerToEdit: trainer);
+                    },
+                    tooltip: 'Edit Trainer',
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              // Profile Image
+              CircleAvatar(
+                radius: 50,
+                backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                backgroundImage: trainer.imageUrl != null && trainer.imageUrl!.isNotEmpty ? NetworkImage(trainer.imageUrl!) : null,
+                child: trainer.imageUrl == null || trainer.imageUrl!.isEmpty
+                    ? Icon(LucideIcons.user, size: 40, color: Theme.of(context).colorScheme.primary)
+                    : null,
+              ),
+              const SizedBox(height: 16),
+              Text(trainer.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              Text(trainer.email, style: TextStyle(fontSize: 14, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+              const SizedBox(height: 32),
+              
+              // Info grid
+              Row(
+                children: [
+                  Expanded(child: _buildTrainerInfoItem(context, LucideIcons.phone, 'Phone', trainer.phone)),
+                  Expanded(child: _buildTrainerInfoItem(context, LucideIcons.star, 'Rating', '${trainer.rating}')),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(child: _buildTrainerInfoItem(context, LucideIcons.award, 'Specialization', trainer.specialization)),
+                  Expanded(child: _buildTrainerInfoItem(context, LucideIcons.clock, 'Experience', '${trainer.experienceYears} Years')),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(child: _buildTrainerInfoItem(context, LucideIcons.calendarDays, 'Date of Birth', trainer.dob != null ? DateFormat('MMM d, yyyy').format(trainer.dob!) : 'N/A')),
+                  const Expanded(child: SizedBox()),
+                ],
+              ),
+              if (trainer.certificates.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Certificates', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                ),
+                const SizedBox(height: 12),
+                Column(
+                  children: trainer.certificates.map((certUrl) {
+                    if (certUrl.isEmpty) return const SizedBox.shrink();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Theme.of(context).dividerColor),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(LucideIcons.fileText, color: Theme.of(context).colorScheme.primary),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text('Certificate', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                            ),
+                            IconButton(
+                              icon: const Icon(LucideIcons.eye, size: 18),
+                              tooltip: 'View',
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => Dialog(
+                                    backgroundColor: Colors.transparent,
+                                    insetPadding: EdgeInsets.zero,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        InteractiveViewer(
+                                          minScale: 1.0, maxScale: 5.0,
+                                          child: Image.network(
+                                            certUrl,
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (context, error, stackTrace) => Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                const Icon(LucideIcons.fileWarning, size: 64, color: Colors.red),
+                                                const SizedBox(height: 16),
+                                                const Text('Image not available', style: TextStyle(color: Colors.white, fontSize: 16)),
+                                                const SizedBox(height: 8),
+                                                const Text('The temporary file is no longer in memory.', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: 16, right: 16,
+                                          child: IconButton(
+                                            icon: const Icon(LucideIcons.x, color: Colors.white, size: 30),
+                                            onPressed: () => Navigator.pop(context),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(LucideIcons.download, size: 18),
+                              tooltip: 'Download',
+                              onPressed: () async {
+                                final url = Uri.parse(certUrl);
+                                if (await canLaunchUrl(url)) {
+                                  await launchUrl(url, mode: LaunchMode.externalApplication);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not download file. The link may have expired.'), backgroundColor: Colors.red));
+                                }
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(LucideIcons.trash2, size: 18, color: Colors.red),
+                              tooltip: 'Remove',
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    backgroundColor: Theme.of(context).colorScheme.surface,
+                                    title: const Text('Remove Certificate?'),
+                                    content: const Text('Are you sure you want to remove this certificate?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                                      ),
+                                      TextButton(
+                                        onPressed: () async {
+                                          try {
+                                            await ref.read(apiServiceProvider).deleteFile(certUrl);
+                                          } catch (e) {
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text('Warning: Failed to delete file from cloud: $e'), backgroundColor: Colors.orange),
+                                              );
+                                            }
+                                          }
+                                          
+                                          final updatedCertificates = List<String>.from(trainer.certificates)..remove(certUrl);
+                                          final updatedTrainer = Trainer(
+                                            id: trainer.id,
+                                            name: trainer.name,
+                                            specialization: trainer.specialization,
+                                            assignedMembers: trainer.assignedMembers,
+                                            rating: trainer.rating,
+                                            imageUrl: trainer.imageUrl,
+                                            email: trainer.email,
+                                            phone: trainer.phone,
+                                            experienceYears: trainer.experienceYears,
+                                            about: trainer.about,
+                                            certificates: updatedCertificates,
+                                          );
+                                          ref.read(trainersProvider.notifier).updateTrainer(updatedTrainer);
+                                          if (context.mounted) {
+                                            Navigator.pop(ctx);
+                                            Navigator.pop(context);
+                                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Certificate removed.'), backgroundColor: Colors.green));
+                                          }
+                                        },
+                                        child: const Text('Remove', style: TextStyle(color: Colors.red)),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+Widget _buildTrainerInfoItem(BuildContext context, IconData icon, String label, String value) {
+  return Row(
+    children: [
+      Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+            Text(value, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface), maxLines: 1, overflow: TextOverflow.ellipsis),
+          ],
+        ),
+      ),
+    ],
+  );
 }

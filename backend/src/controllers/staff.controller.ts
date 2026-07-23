@@ -28,10 +28,18 @@ export const getStaff = async (req: AuthRequest, res: Response): Promise<void> =
 export const addStaff = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const gymId = await getGymId(req.user._id);
+    const { name, role, shift, phone, email, dob, imageUrl, idProofUrl } = req.body;
     
     const staff = await Staff.create({
       gymId,
-      ...req.body
+      name,
+      role,
+      shift,
+      phone,
+      email,
+      dob,
+      imageUrl,
+      idProofUrl
     });
 
     res.status(201).json(staff);

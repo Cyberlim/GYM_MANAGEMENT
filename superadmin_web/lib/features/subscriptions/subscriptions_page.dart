@@ -144,14 +144,18 @@ class _SubscriptionsPageState extends ConsumerState<SubscriptionsPage> {
               if (isMobile)
                 ...filteredGyms.map((gym) {
                   final regDate = DateTime.tryParse(gym['registeredAt'] ?? '') ?? DateTime.now();
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: InkWell(
+                      onTap: () => context.push('/gyms/${gym['id']}'),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Theme.of(context).dividerColor),
-                    ),
+                      child: Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Theme.of(context).dividerColor),
+                        ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -208,11 +212,14 @@ class _SubscriptionsPageState extends ConsumerState<SubscriptionsPage> {
                         ),
                       ],
                     ),
-                  );
-                })
+                  ),
+                ),
+              );
+            })
               else
                 DataTableWidget(
                   columns: const ['Gym Name', 'Owner', 'Plan', 'Active Members', 'Status', 'Registered'],
+                  onRowTap: (index) => context.push('/gyms/${filteredGyms[index]['id']}'),
                   rows: filteredGyms.map((gym) {
                     final regDate = DateTime.tryParse(gym['registeredAt'] ?? '') ?? DateTime.now();
                     return [

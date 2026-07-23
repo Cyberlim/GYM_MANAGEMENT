@@ -144,12 +144,37 @@ class _NotificationCard extends ConsumerWidget {
       ),
       child: ListTile(
         onTap: () {
+          if (!notification.isRead) {
+            ref.read(notificationsProvider.notifier).markAsRead(notification.id);
+          }
           if (notification.targetRoute != null) {
-            // Also mark as read when clicking it
-            if (!notification.isRead) {
-              ref.read(notificationsProvider.notifier).markAsRead(notification.id);
-            }
             context.go(notification.targetRoute!);
+          } else {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                title: Row(
+                  children: [
+                    Icon(iconData, color: iconColor),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text(notification.title)),
+                  ],
+                ),
+                content: SingleChildScrollView(
+                  child: Text(
+                    notification.message,
+                    style: const TextStyle(fontSize: 16, height: 1.5),
+                  ),
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            );
           }
         },
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

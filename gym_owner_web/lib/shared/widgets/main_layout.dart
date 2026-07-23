@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gym_owner_web/core/config/env.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -496,7 +497,7 @@ class _TopBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final showGreeting = screenWidth >= 1200;
+    final isDesktop = screenWidth >= 1200;
     final showSidebar = screenWidth >= 900;
     final isMobile = screenWidth < 600;
     final events = ref.watch(eventsProvider);
@@ -539,20 +540,22 @@ class _TopBar extends ConsumerWidget {
               ),
             ),
             
-          // Left Greeting
-          if (showGreeting)
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Good Morning${userName.isNotEmpty ? ', $userName' : ''}! 👋',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+          // Left Greeting (Always show now, but adapt for mobile)
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hello${userName.isNotEmpty ? ', $userName' : ''}! 👋',
+                  style: TextStyle(
+                    fontSize: isMobile ? 18 : 24,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (!isMobile) ...[
                   const SizedBox(height: 4),
                   Text(
                     'Here\'s what\'s happening with your gym today.',
@@ -560,19 +563,22 @@ class _TopBar extends ConsumerWidget {
                       fontSize: 14,
                       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
-              ),
+              ],
             ),
+          ),
 
-          if (showGreeting)
+          if (isDesktop)
             const SizedBox(width: 24),
 
           // Right Actions
           Builder(
             builder: (context) {
               final searchField = Container(
-                width: showGreeting ? 320 : null,
+                width: isDesktop ? 320 : null,
                 height: 44,
                 decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.surface,
@@ -689,37 +695,10 @@ class _TopBar extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   // Search Field
-                  if (!isMobile)
-                    showGreeting ? searchField : Expanded(child: searchField),
-                  if (!isMobile)
+                  if (isDesktop)
+                    searchField,
+                  if (isDesktop)
                     const SizedBox(width: 16),
-                  
-                  if (isMobile)
-                    _buildIconWithBadge(
-                      context,
-                      LucideIcons.search,
-                      isHoverZoomed: false,
-                      onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => Align(
-                            alignment: Alignment.topCenter,
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: kToolbarHeight),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: SizedBox(
-                                  width: MediaQuery.of(context).size.width - 32,
-                                  child: searchField,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  if (isMobile)
-                    const SizedBox(width: 12),
                 
                 // Action Icons
                 if (screenWidth > 400) ...[
@@ -740,11 +719,39 @@ class _TopBar extends ConsumerWidget {
                         value: n.id,
                         padding: EdgeInsets.zero,
                         onTap: () {
+                          if (!n.isRead) {
+                            ref.read(notificationsProvider.notifier).markAsRead(n.id);
+                          }
                           if (n.targetRoute != null) {
-                            if (!n.isRead) {
-                              ref.read(notificationsProvider.notifier).markAsRead(n.id);
-                            }
                             context.go(n.targetRoute!);
+                          } else {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  title: Row(
+                                    children: [
+                                      Icon(LucideIcons.bell, color: Theme.of(context).colorScheme.primary),
+                                      const SizedBox(width: 12),
+                                      Expanded(child: Text(n.title)),
+                                    ],
+                                  ),
+                                  content: SingleChildScrollView(
+                                    child: Text(
+                                      n.message,
+                                      style: const TextStyle(fontSize: 16, height: 1.5),
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(),
+                                      child: const Text('Close', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            });
                           }
                         },
                         child: Container(
@@ -867,91 +874,95 @@ class _TopBar extends ConsumerWidget {
                   const SizedBox(width: 12),
                   
                   // Calendar
-                  HoverZoomEffect(
-                    scale: 1.1,
-                    child: PopupMenuButton<String>(
-                    offset: const Offset(0, 50),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    color: Theme.of(context).colorScheme.surface,
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        enabled: false,
-                        child: Text('Upcoming Events', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                      ),
-                      const PopupMenuDivider(),
-                      ...events.map((e) => PopupMenuItem(
-                        value: e.id,
-                        padding: EdgeInsets.zero,
-                        child: Container(
-                          width: 320,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.5))),
+                  if (isDesktop) ...[
+                    HoverZoomEffect(
+                      scale: 1.1,
+                      child: PopupMenuButton<String>(
+                      offset: const Offset(0, 50),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      color: Theme.of(context).colorScheme.surface,
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          enabled: false,
+                          child: Text('Upcoming Events', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                        ),
+                        const PopupMenuDivider(),
+                        ...events.map((e) => PopupMenuItem(
+                          value: e.id,
+                          padding: EdgeInsets.zero,
+                          child: Container(
+                            width: 320,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.5))),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.orange.withOpacity(0.1),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(LucideIcons.calendar, size: 16, color: Colors.orange),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(e.title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
+                                      const SizedBox(height: 4),
+                                      Text(e.date, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 11)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                        )),
+                        const PopupMenuDivider(),
+                        PopupMenuItem(
+                          value: 'add_event',
                           child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(LucideIcons.calendar, size: 16, color: Colors.orange),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(e.title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 13, fontWeight: FontWeight.w600)),
-                                    const SizedBox(height: 4),
-                                    Text(e.date, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 11)),
-                                  ],
-                                ),
-                              ),
+                              Icon(LucideIcons.plus, size: 16, color: Theme.of(context).colorScheme.primary),
+                              const SizedBox(width: 8),
+                              Text('Add Event', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
-                      )),
-                      const PopupMenuDivider(),
-                      PopupMenuItem(
-                        value: 'add_event',
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(LucideIcons.plus, size: 16, color: Theme.of(context).colorScheme.primary),
-                            const SizedBox(width: 8),
-                            Text('Add Event', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
-                          ],
-                        ),
-                      ),
-                    ],
-                    onSelected: (value) {
-                      if (value == 'add_event') {
-                        _showAddEventDialog(context, ref);
-                      }
-                    },
-                    child: _buildIconWithBadge(context, LucideIcons.calendar, badgeCount: events.length, isHoverZoomed: false),
-                  ),
-                  ),
-                  const SizedBox(width: 12),
+                      ],
+                      onSelected: (value) {
+                        if (value == 'add_event') {
+                          _showAddEventDialog(context, ref);
+                        }
+                      },
+                      child: _buildIconWithBadge(context, LucideIcons.calendar, badgeCount: events.length, isHoverZoomed: false),
+                    ),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
                 ],
                 
                 // Dark Mode Toggle
-                Builder(
-                  builder: (context) {
-                    final isDark = ref.watch(themeProvider) == ThemeMode.dark;
-                    return _buildIconWithBadge(
-                      context,
-                      isDark ? LucideIcons.sun : LucideIcons.moon,
-                      onTap: () {
-                        ref.read(themeProvider.notifier).toggleTheme();
-                      },
-                    );
-                  }
-                ),
-                const SizedBox(width: 16),
+                if (isDesktop) ...[
+                  Builder(
+                    builder: (context) {
+                      final isDark = ref.watch(themeProvider) == ThemeMode.dark;
+                      return _buildIconWithBadge(
+                        context,
+                        isDark ? LucideIcons.sun : LucideIcons.moon,
+                        onTap: () {
+                          ref.read(themeProvider.notifier).toggleTheme();
+                        },
+                      );
+                    }
+                  ),
+                  const SizedBox(width: 16),
+                ],
                 
                 // Profile
                 HoverZoomEffect(
@@ -961,7 +972,28 @@ class _TopBar extends ConsumerWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     color: Theme.of(context).colorScheme.surface,
                     onSelected: (value) async {
-                      if (value == 'profile') {
+                      if (value == 'search') {
+                        showDialog(
+                          context: context,
+                          builder: (context) => Align(
+                            alignment: Alignment.topCenter,
+                            child: Padding(
+                              padding: const EdgeInsets.only(top: kToolbarHeight),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: SizedBox(
+                                  width: MediaQuery.of(context).size.width - 32,
+                                  child: searchField,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      } else if (value == 'add_event') {
+                        _showAddEventDialog(context, ref);
+                      } else if (value == 'dark_mode') {
+                        ref.read(themeProvider.notifier).toggleTheme();
+                      } else if (value == 'profile') {
                         context.go('/profile');
                       } else if (value == 'settings') {
                         context.go('/settings');
@@ -973,6 +1005,39 @@ class _TopBar extends ConsumerWidget {
                       }
                     },
                     itemBuilder: (context) => [
+                      if (!isDesktop) ...[
+                        PopupMenuItem(
+                          value: 'search',
+                          child: Row(
+                            children: [
+                              Icon(LucideIcons.search, size: 16, color: Theme.of(context).colorScheme.onSurface),
+                              const SizedBox(width: 12),
+                              Text('Search', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'add_event',
+                          child: Row(
+                            children: [
+                              Icon(LucideIcons.calendarPlus, size: 16, color: Theme.of(context).colorScheme.onSurface),
+                              const SizedBox(width: 12),
+                              Text('Add Event', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'dark_mode',
+                          child: Row(
+                            children: [
+                              Icon(ref.watch(themeProvider) == ThemeMode.dark ? LucideIcons.sun : LucideIcons.moon, size: 16, color: Theme.of(context).colorScheme.onSurface),
+                              const SizedBox(width: 12),
+                              Text(ref.watch(themeProvider) == ThemeMode.dark ? 'Light Mode' : 'Dark Mode', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuDivider(),
+                      ],
                       PopupMenuItem(
                         value: 'profile',
                         child: Row(
@@ -1014,12 +1079,34 @@ class _TopBar extends ConsumerWidget {
                       ),
                       child: Row(
                         children: [
-                          CircleAvatar(
-                            radius: 12,
-                            backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                            backgroundImage: profileImage.isNotEmpty ? NetworkImage(profileImage) : null,
-                            onBackgroundImageError: (_, __) {},
-                            child: profileImage.isEmpty ? Icon(LucideIcons.user, size: 16, color: Theme.of(context).colorScheme.primary) : null,
+                          ClipOval(
+                            child: profileImage.isNotEmpty
+                                ? Image.network(
+                                    profileImage.startsWith('http') ? profileImage : '${Env.apiUrl}$profileImage',
+                                    width: 24,
+                                    height: 24,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => Container(
+                                      width: 24,
+                                      height: 24,
+                                      color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                                        style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    width: 24,
+                                    height: 24,
+                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                                      style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
                           ),
                           if (screenWidth > 500) ...[
                             const SizedBox(width: 8),
@@ -1048,7 +1135,7 @@ class _TopBar extends ConsumerWidget {
               ],
             );
 
-              return showGreeting ? rightActions : Expanded(child: rightActions);
+              return isDesktop ? rightActions : Expanded(child: rightActions);
             },
           ),
         ],

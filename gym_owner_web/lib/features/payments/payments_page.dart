@@ -173,26 +173,29 @@ class _PaymentsPageState extends ConsumerState<PaymentsPage> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Payments',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Payments',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Manage transactions and revenue',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Manage transactions and revenue',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => showAddPaymentDialog(context, ref),
                   icon: const Icon(LucideIcons.plus, size: 18),
@@ -207,13 +210,19 @@ class _PaymentsPageState extends ConsumerState<PaymentsPage> {
               ],
             ),
             const SizedBox(height: 24),
-            Wrap(
-              spacing: 16,
-              runSpacing: 16,
-              children: [
-                SizedBox(width: 250, child: _StatCard(title: 'Total Revenue', amount: totalRevenue, icon: LucideIcons.dollarSign, color: Colors.green)),
-                SizedBox(width: 250, child: _StatCard(title: 'Pending Payments', amount: pendingRevenue, icon: LucideIcons.clock, color: Colors.orange)),
-              ],
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 516),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _StatCard(title: 'Total Revenue', amount: totalRevenue, icon: LucideIcons.dollarSign, color: Colors.green),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _StatCard(title: 'Pending Payments', amount: pendingRevenue, icon: LucideIcons.clock, color: Colors.orange),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 32),
             Row(
@@ -233,71 +242,81 @@ class _PaymentsPageState extends ConsumerState<PaymentsPage> {
             const SizedBox(height: 16),
             LayoutBuilder(
               builder: (context, constraints) {
-                final listWidth = constraints.maxWidth > 800 ? constraints.maxWidth : 800.0;
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints.tightFor(
-                      width: listWidth,
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                        ),
-                        child: Column(
+                final isMobile = MediaQuery.of(context).size.width < 900;
+                final listWidth = isMobile ? constraints.maxWidth : (constraints.maxWidth > 800 ? constraints.maxWidth : 800.0);
+                
+                Widget content = Column(
+                  children: [
+                    if (!isMobile) ...[
+                      Padding(
+                        padding: const EdgeInsets.only(left: 24, right: 24, top: 20, bottom: 8),
+                        child: Row(
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.only(left: 24, right: 24, top: 20, bottom: 8),
-                              child: Row(
-                                children: [
-                                  const SizedBox(width: 56), // Avatar placeholder
-                                  Expanded(
-                                    flex: 2,
-                                    child: Text('Member', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                                  ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: Text('Plan', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                                  ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: Text('Date', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                                  ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: Text('Method', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                                  ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                                  ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                                  ),
-                                ],
-                              ),
+                            const SizedBox(width: 56), // Avatar placeholder
+                            Expanded(
+                              flex: 2,
+                              child: Text('Member', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
                             ),
-                            Divider(color: Theme.of(context).dividerColor.withOpacity(0.2), height: 1),
-                            ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              itemCount: sortedPayments.length,
-                              separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                              itemBuilder: (context, index) {
-                                final payment = sortedPayments[index];
-                                final isHighlighted = payment.id == highlightId;
-                                return _TransactionRow(payment: payment, isHighlighted: isHighlighted);
-                              },
+                            Expanded(
+                              flex: 1,
+                              child: Text('Plan', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Text('Date', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Text('Method', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
                             ),
                           ],
                         ),
                       ),
-                  ),
+                      Divider(color: Theme.of(context).dividerColor.withOpacity(0.2), height: 1),
+                    ],
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      itemCount: sortedPayments.length,
+                      separatorBuilder: (context, index) => isMobile ? const SizedBox(height: 16) : Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                      itemBuilder: (context, index) {
+                        final payment = sortedPayments[index];
+                        final isHighlighted = payment.id == highlightId;
+                        return _TransactionRow(payment: payment, isHighlighted: isHighlighted);
+                      },
+                    ),
+                  ],
                 );
+
+                if (isMobile) {
+                  return content;
+                } else {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints.tightFor(
+                        width: listWidth,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                          ),
+                          child: content,
+                        ),
+                    ),
+                  );
+                }
               }
             ),
             ],
@@ -561,13 +580,20 @@ class _StatCard extends StatelessWidget {
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 14)),
-              const SizedBox(height: 4),
-              Text('₹${amount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 14)),
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text('₹${amount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -606,6 +632,170 @@ class _TransactionRow extends ConsumerWidget {
       default:
         statusColor = Colors.redAccent;
         statusIcon = LucideIcons.xCircle;
+    }
+    final isMobile = MediaQuery.of(context).size.width < 900;
+
+    if (isMobile) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  child: Text(
+                    member.name.substring(0, 1).toUpperCase(),
+                    style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(member.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Text(
+                        member.email,
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                if (DateTime.now().difference(payment.date).inDays <= (payment.status == 'Pending' ? 10 : 2))
+                  PopupMenuButton<String>(
+                    icon: Icon(LucideIcons.moreVertical, size: 20, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        showAddPaymentDialog(context, ref, paymentToEdit: payment);
+                      } else if (value == 'delete') {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            backgroundColor: Theme.of(context).colorScheme.surface,
+                            title: Text('Delete Payment', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                            content: Text('Are you sure you want to delete this payment record?', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                              ),
+                              ElevatedButton(
+                                onPressed: () {
+                                  ref.read(paymentsProvider.notifier).removePayment(payment.id);
+                                  Navigator.pop(ctx);
+                                },
+                                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                                child: const Text('Delete', style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(value: 'edit', child: Text('Edit Payment')),
+                      const PopupMenuItem(value: 'delete', child: Text('Delete Payment', style: TextStyle(color: Colors.red))),
+                    ],
+                  ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: planColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    member.membershipPlan,
+                    style: TextStyle(
+                      color: planColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Text(
+                  DateFormat('MMM dd, yyyy').format(payment.date),
+                  style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 12),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        payment.paymentMethod == 'Cash' ? LucideIcons.banknote : 
+                        payment.paymentMethod == 'Card' ? LucideIcons.creditCard : LucideIcons.smartphone,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        payment.paymentMethod,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.8),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  children: [
+                    Text(
+                      '₹${payment.amount.toStringAsFixed(2)}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(statusIcon, size: 14, color: statusColor),
+                          const SizedBox(width: 6),
+                          Text(
+                            payment.status,
+                            style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
     }
 
     return Container(

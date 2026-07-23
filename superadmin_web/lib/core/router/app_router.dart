@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/dashboard/dashboard_page.dart';
 import '../../features/gyms/gym_list_page.dart';
@@ -19,6 +20,23 @@ import '../../features/profile/profile_page.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/login',
+  redirect: (context, state) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    
+    final isLoginRoute = state.uri.path == '/login';
+
+    if (token == null) {
+      if (!isLoginRoute) {
+        return '/login';
+      }
+    } else {
+      if (isLoginRoute) {
+        return '/dashboard';
+      }
+    }
+    return null;
+  },
   routes: [
     GoRoute(
       path: '/login',

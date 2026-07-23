@@ -30,7 +30,7 @@ export const getMembers = async (req: AuthRequest, res: Response): Promise<void>
 export const addMember = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const gymId = await getGymId(req.user._id);
-    const { name, email, phone, membershipPlan, status, joinDate, expiryDate, totalCheckIns, imageUrl, address, documentUrl, trainerId } = req.body;
+    const { name, email, phone, membershipPlan, status, joinDate, expiryDate, totalCheckIns, imageUrl, dob, address, documentUrl, trainerId } = req.body;
 
     const member = await Member.create({
       gymId,
@@ -43,6 +43,7 @@ export const addMember = async (req: AuthRequest, res: Response): Promise<void> 
       expiryDate,
       totalCheckIns: totalCheckIns || 0,
       imageUrl: imageUrl || '',
+      dob,
       address: address || '',
       documentUrl: documentUrl || '',
       trainerId: trainerId || undefined,

@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_web_libraries_in_flutter, uri_does_not_exist, deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/app_theme.dart';
@@ -6,6 +7,12 @@ import '../../shared/widgets/primary_button.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/profile/profile_provider.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:js' as js;
+import 'dart:js_util' as js_util;
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -144,6 +151,7 @@ class _NotificationSettingsViewState extends ConsumerState<_NotificationSettings
   bool _newSignups = true;
   bool _paymentReceived = true;
   bool _paymentFailures = true;
+  bool _pushNotifications = false;
   bool _isSaving = false;
 
   @override
@@ -159,6 +167,7 @@ class _NotificationSettingsViewState extends ConsumerState<_NotificationSettings
             _newSignups = settings['newGymSignups'] ?? true;
             _paymentReceived = settings['paymentReceived'] ?? true;
             _paymentFailures = settings['paymentFailures'] ?? true;
+            _pushNotifications = settings['pushNotifications'] ?? false;
           });
         }
       }
@@ -172,6 +181,7 @@ class _NotificationSettingsViewState extends ConsumerState<_NotificationSettings
       'newGymSignups': _newSignups,
       'paymentReceived': _paymentReceived,
       'paymentFailures': _paymentFailures,
+      'pushNotifications': _pushNotifications,
     });
     setState(() => _isSaving = false);
 
@@ -191,10 +201,20 @@ class _NotificationSettingsViewState extends ConsumerState<_NotificationSettings
       title: 'Notification Preferences',
       description: 'Manage what emails and alerts you receive.',
       children: [
-        _buildToggle(context, 'System Alerts', 'Receive critical system performance alerts.', _systemAlerts, (val) => setState(() => _systemAlerts = val)),
-        _buildToggle(context, 'New Gym Signups', 'Get notified when a new gym registers.', _newSignups, (val) => setState(() => _newSignups = val)),
-        _buildToggle(context, 'Payment Received', 'Alert me when a subscription payment is received.', _paymentReceived, (val) => setState(() => _paymentReceived = val)),
-        _buildToggle(context, 'Payment Failures', 'Alert me when a subscription payment fails.', _paymentFailures, (val) => setState(() => _paymentFailures = val)),
+        _buildToggle(context, 'Push Notifications', 'Receive push notifications even when the app is closed.', _pushNotifications, (val) {
+          setState(() => _pushNotifications = val);
+          _handlePushNotificationToggle(val);
+        }),
+        if (_pushNotifications) ...[
+          const Padding(
+            padding: EdgeInsets.only(bottom: 24.0),
+            child: Divider(),
+          ),
+          _buildToggle(context, 'System Alerts', 'Receive critical system performance alerts.', _systemAlerts, (val) => setState(() => _systemAlerts = val)),
+          _buildToggle(context, 'New Gym Signups', 'Get notified when a new gym registers.', _newSignups, (val) => setState(() => _newSignups = val)),
+          _buildToggle(context, 'Payment Received', 'Alert me when a subscription payment is received.', _paymentReceived, (val) => setState(() => _paymentReceived = val)),
+          _buildToggle(context, 'Payment Failures', 'Alert me when a subscription payment fails.', _paymentFailures, (val) => setState(() => _paymentFailures = val)),
+        ],
         const SizedBox(height: 32),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
@@ -232,6 +252,100 @@ class _NotificationSettingsViewState extends ConsumerState<_NotificationSettings
         ],
       ),
     );
+  }
+
+  void _handlePushNotificationToggle(bool value) async {
+    try {
+      final baseUrl = dotenv.env['API_URL'] ?? 'http://localhost:5000/api';
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      final headers = {
+        'Content-Type': 'application/json',
+        if (token != null) 'Authorization': 'Bearer $token',
+      };
+
+      if (value == true) {
+        final response = await http.get(Uri.parse('$baseUrl/notifications/vapid-public-key'), headers: headers);
+        if (response.statusCode == 200) {
+          final vapidKey = jsonDecode(response.body)['publicKey'];
+          final promise = js_util.callMethod(js_util.globalThis, 'subscribeToPushNotifications', [vapidKey]);
+          final subscriptionStr = await js_util.promiseToFuture(promise);
+          
+          final subResponse = await http.post(
+            Uri.parse('$baseUrl/notifications/subscribe'),
+            headers: headers,
+            body: jsonEncode({'subscription': jsonDecode(subscriptionStr)}),
+          );
+
+          if (subResponse.statusCode == 200 || subResponse.statusCode == 201) {
+            // Success, message will be shown at the end
+          } else {
+            throw Exception('Backend returned ${subResponse.statusCode}');
+          }
+        } else {
+          throw Exception('Could not fetch VAPID key');
+        }
+      } else {
+        final promise = js_util.callMethod(js_util.globalThis, 'unsubscribeFromPushNotifications', []);
+        final endpointStr = await js_util.promiseToFuture(promise);
+        if (endpointStr != null) {
+          final unsubResponse = await http.post(
+            Uri.parse('$baseUrl/notifications/unsubscribe'),
+            headers: headers,
+            body: endpointStr,
+          );
+          
+          if (unsubResponse.statusCode == 200) {
+            // Success, message will be shown at the end
+          } else {
+            throw Exception('Backend returned ${unsubResponse.statusCode}');
+          }
+        } else {
+           // Success, message will be shown at the end
+        }
+      }
+      
+      if (mounted) {
+        String successMessage = (value as bool) ? 'Push notifications enabled successfully' : 'Push notifications disabled successfully';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(successMessage), duration: const Duration(seconds: 2), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      print('Error handling push notification toggling: $e');
+      if (mounted) {
+        // Revert toggle state on error
+        setState(() => _pushNotifications = !value);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Setup Error: ${e.toString()}'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _updateSetting(String key, dynamic value) async {
+    try {
+      await ref.read(profileProvider.notifier).updateSettings({key: value});
+      
+      if (mounted) {
+        String successMessage = 'Setting updated successfully';
+        if (key == 'emailNotifications') {
+          successMessage = (value as bool) ? 'Email notifications enabled successfully' : 'Email notifications disabled successfully';
+        } else if (key == 'pushNotifications') {
+          successMessage = (value as bool) ? 'Push notifications enabled successfully' : 'Push notifications disabled successfully';
+        } else if (key == 'twoFactorEnabled') {
+          successMessage = (value as bool) ? 'Two-Factor Authentication enabled successfully' : 'Two-Factor Authentication disabled successfully';
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(successMessage), duration: const Duration(seconds: 2), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to update setting'), backgroundColor: Colors.red));
+      }
+    }
   }
 }
 

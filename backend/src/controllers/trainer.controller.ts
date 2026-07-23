@@ -28,10 +28,21 @@ export const getTrainers = async (req: AuthRequest, res: Response): Promise<void
 export const addTrainer = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const gymId = await getGymId(req.user._id);
+    const { name, specialization, assignedMembers, rating, dob, imageUrl, email, phone, experienceYears, about, certificates } = req.body;
     
     const trainer = await Trainer.create({
       gymId,
-      ...req.body
+      name,
+      specialization,
+      assignedMembers,
+      rating,
+      dob,
+      imageUrl,
+      email,
+      phone,
+      experienceYears,
+      about,
+      certificates
     });
 
     res.status(201).json(trainer);

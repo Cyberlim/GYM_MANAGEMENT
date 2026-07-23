@@ -5,7 +5,9 @@ import 'package:gym_owner_web/features/staff/providers/staff_provider.dart';
 import 'package:gym_owner_web/data/models/gym_owner_models.dart';
 
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:gym_owner_web/features/members/providers/members_provider.dart';
 
 void showStaffDialog(BuildContext context, WidgetRef ref, {Staff? staffToEdit}) {
   final nameController = TextEditingController(text: staffToEdit?.name ?? '');
@@ -15,7 +17,10 @@ void showStaffDialog(BuildContext context, WidgetRef ref, {Staff? staffToEdit}) 
   final phoneController = TextEditingController(text: staffToEdit?.phone ?? '');
   String? pickedImagePath = staffToEdit?.imageUrl;
   String? pickedIdProofPath = staffToEdit?.idProofUrl;
+  DateTime? selectedDob = staffToEdit?.dob;
   final ImagePicker picker = ImagePicker();
+  bool isUploadingProfile = false;
+  bool isUploadingIdProof = false;
 
   String formatTime(TimeOfDay time) {
     final hour = time.hourOfPeriod == 0 ? 12 : time.hourOfPeriod;
@@ -85,15 +90,15 @@ void showStaffDialog(BuildContext context, WidgetRef ref, {Staff? staffToEdit}) 
                         children: [
                           GestureDetector(
                             onTap: () {
-                              if (pickedImagePath != null) {
+                              if (pickedImagePath != null && pickedImagePath!.isNotEmpty) {
                                 _showImagePopup(context, pickedImagePath!, isCircle: true);
                               }
                             },
                             child: CircleAvatar(
                               radius: 40,
                               backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                              backgroundImage: pickedImagePath != null ? NetworkImage(pickedImagePath!) : null,
-                              child: pickedImagePath == null 
+                              backgroundImage: (pickedImagePath != null && pickedImagePath!.isNotEmpty) ? NetworkImage(pickedImagePath!) : null,
+                              child: (pickedImagePath == null || pickedImagePath!.isEmpty)
                                   ? Icon(LucideIcons.user, size: 32, color: Theme.of(context).colorScheme.primary.withOpacity(0.5))
                                   : null,
                             ),
@@ -102,20 +107,41 @@ void showStaffDialog(BuildContext context, WidgetRef ref, {Staff? staffToEdit}) 
                             onTap: () async {
                               final XFile? image = await picker.pickImage(source: ImageSource.gallery);
                               if (image != null) {
-                                setState(() {
-                                  pickedImagePath = image.path;
-                                });
+                                setState(() => isUploadingProfile = true);
+                                try {
+                                  final bytes = await image.readAsBytes();
+                                  final url = await ref.read(apiServiceProvider).uploadFile(bytes, image.name);
+                                  if (url != null) {
+                                    if (pickedImagePath != null && pickedImagePath!.startsWith('http') && !pickedImagePath!.contains('unsplash.com')) {
+                                      try { await ref.read(apiServiceProvider).deleteFile(pickedImagePath!); } catch (e) { debugPrint('Failed to delete old image: $e'); }
+                                    }
+                                    setState(() => pickedImagePath = url);
+                                  }
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e'), backgroundColor: Colors.red));
+                                } finally {
+                                  setState(() => isUploadingProfile = false);
+                                }
                               }
                             },
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2),
-                              ),
-                              child: Icon(LucideIcons.camera, size: 14, color: Theme.of(context).colorScheme.onPrimary),
-                            ),
+                            child: isUploadingProfile
+                                ? Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.surface,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2)),
+                                  )
+                                : Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.primary,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: Theme.of(context).colorScheme.surface, width: 2),
+                                    ),
+                                    child: Icon(LucideIcons.camera, size: 14, color: Theme.of(context).colorScheme.onPrimary),
+                                  ),
                           ),
                         ],
                       ),
@@ -162,78 +188,170 @@ void showStaffDialog(BuildContext context, WidgetRef ref, {Staff? staffToEdit}) 
                       decoration: const InputDecoration(labelText: 'Email Address'),
                     ),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: phoneController,
-                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                      decoration: const InputDecoration(labelText: 'Phone Number'),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: phoneController,
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                            decoration: const InputDecoration(labelText: 'Phone Number'),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () async {
+                              final date = await showDatePicker(
+                                context: context,
+                                initialDate: selectedDob ?? DateTime.now(),
+                                firstDate: DateTime(1900),
+                                lastDate: DateTime.now(),
+                              );
+                              if (date != null) setState(() => selectedDob = date);
+                            },
+                            child: InputDecorator(
+                              decoration: const InputDecoration(
+                                labelText: 'Date of Birth (Optional)',
+                              ),
+                              child: Text(selectedDob != null ? '${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}' : 'Select Date', maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 24),
                     
-                    // ID Proof Upload
+                    // ID Proof Uploader
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('ID Proof (Aadhar/PAN)', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                        if (pickedIdProofPath != null)
-                          TextButton.icon(
-                            onPressed: () async {
-                              final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-                              if (image != null) {
-                                setState(() {
-                                  pickedIdProofPath = image.path;
-                                });
+                        TextButton.icon(
+                          onPressed: () async {
+                            final XFile? doc = await picker.pickImage(source: ImageSource.gallery);
+                            if (doc != null) {
+                              setState(() => isUploadingIdProof = true);
+                              try {
+                                final bytes = await doc.readAsBytes();
+                                final url = await ref.read(apiServiceProvider).uploadFile(bytes, doc.name);
+                                if (url != null) {
+                                  if (pickedIdProofPath != null && pickedIdProofPath!.startsWith('http')) {
+                                    try { await ref.read(apiServiceProvider).deleteFile(pickedIdProofPath!); } catch (e) { debugPrint('Failed to delete old id proof: $e'); }
+                                  }
+                                  setState(() => pickedIdProofPath = url);
+                                }
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Upload failed: $e'), backgroundColor: Colors.red));
+                              } finally {
+                                setState(() => isUploadingIdProof = false);
                               }
-                            },
-                            icon: Icon(LucideIcons.upload, size: 16, color: Theme.of(context).colorScheme.primary),
-                            label: Text('Change', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
-                          ),
+                            }
+                          },
+                          icon: isUploadingIdProof 
+                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                              : Icon(LucideIcons.upload, size: 16, color: Theme.of(context).colorScheme.primary),
+                          label: Text(isUploadingIdProof ? 'Uploading...' : 'Upload', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    if (pickedIdProofPath != null)
-                      GestureDetector(
-                        onTap: () => _showImagePopup(context, pickedIdProofPath!, isCircle: false),
-                        child: Container(
-                          height: 120,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Theme.of(context).dividerColor),
-                            image: DecorationImage(image: NetworkImage(pickedIdProofPath!), fit: BoxFit.cover),
-                          ),
+                    if (pickedIdProofPath == null || pickedIdProofPath!.isEmpty)
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Theme.of(context).dividerColor, style: BorderStyle.solid),
+                        ),
+                        child: Center(
+                          child: Text('No document uploaded', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
                         ),
                       )
                     else
-                      GestureDetector(
-                        onTap: () async {
-                          final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-                          if (image != null) {
-                            setState(() {
-                              pickedIdProofPath = image.path;
-                            });
-                          }
-                        },
-                        child: Container(
-                          height: 120,
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                              width: 1.5,
-                              style: BorderStyle.solid, // Note: Flutter doesn't have dashed borders out of the box without a package, but solid is fine
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Theme.of(context).dividerColor),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  pickedIdProofPath!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Center(child: Icon(LucideIcons.imageOff)),
+                                ),
+                              )
                             ),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(LucideIcons.imagePlus, color: Theme.of(context).colorScheme.primary, size: 32),
-                              const SizedBox(height: 8),
-                              Text('Click to upload ID Proof', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text('ID Proof', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                            ),
+                            IconButton(
+                              icon: const Icon(LucideIcons.eye, size: 18),
+                              tooltip: 'View',
+                              onPressed: () => _showImagePopup(context, pickedIdProofPath!, isCircle: false),
+                            ),
+                            if (pickedIdProofPath!.startsWith('http'))
+                              IconButton(
+                                icon: const Icon(LucideIcons.download, size: 18),
+                                tooltip: 'Download',
+                                onPressed: () async {
+                                  final url = Uri.parse(pickedIdProofPath!);
+                                  if (await canLaunchUrl(url)) {
+                                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                                  }
+                                },
+                              ),
+                            IconButton(
+                              icon: const Icon(LucideIcons.trash2, size: 18, color: Colors.red),
+                              tooltip: 'Remove',
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (ctx) => AlertDialog(
+                                    backgroundColor: Theme.of(context).colorScheme.surface,
+                                    title: const Text('Remove ID Proof?'),
+                                    content: const Text('Are you sure you want to remove this ID proof?'),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(ctx),
+                                        child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                                      ),
+                                      TextButton(
+                                        onPressed: () async {
+                                          try {
+                                            await ref.read(apiServiceProvider).deleteFile(pickedIdProofPath!);
+                                          } catch (e) {
+                                            if (context.mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(content: Text('Warning: Failed to delete file from cloud: $e'), backgroundColor: Colors.orange),
+                                              );
+                                            }
+                                          }
+                                          setState(() => pickedIdProofPath = null);
+                                          if (context.mounted) {
+                                            Navigator.pop(ctx);
+                                          }
+                                        },
+                                        child: const Text('Remove', style: TextStyle(color: Colors.red)),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
                       ),
                   ],
@@ -251,11 +369,12 @@ void showStaffDialog(BuildContext context, WidgetRef ref, {Staff? staffToEdit}) 
                   if (nameController.text.isNotEmpty && roleController.text.isNotEmpty) {
                     final newStaff = Staff(
                       id: staffToEdit?.id ?? '',
-                      name: nameController.text,
-                      role: roleController.text,
-                      shift: shiftController.text,
-                      email: emailController.text,
-                      phone: phoneController.text,
+                      name: nameController.text.trim(),
+                      role: roleController.text.trim(),
+                      shift: shiftController.text.trim(),
+                      phone: phoneController.text.trim(),
+                      email: emailController.text.trim(),
+                      dob: selectedDob,
                       imageUrl: pickedImagePath,
                       idProofUrl: pickedIdProofPath,
                     );
@@ -292,15 +411,32 @@ class StaffPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final staffAsync = ref.watch(filteredStaffProvider);
-
-    final isListView = ref.watch(isStaffListViewProvider);
+    final isListViewSetting = ref.watch(isStaffListViewProvider);
+    final isMobile = MediaQuery.of(context).size.width < 900;
+    final isListView = isMobile ? false : isListViewSetting;
 
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(context, ref, isListView),
+          Text(
+            'Staff',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Manage your gym staff and receptionists',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildHeader(context, ref, isListViewSetting, isMobile),
           const SizedBox(height: 24),
           Expanded(
             child: staffAsync.when(
@@ -371,77 +507,77 @@ class StaffPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, WidgetRef ref, bool isListView) {
-    return Wrap(
-      spacing: 16,
-      runSpacing: 16,
-      alignment: WrapAlignment.spaceBetween,
-      crossAxisAlignment: WrapCrossAlignment.center,
+  Widget _buildHeader(BuildContext context, WidgetRef ref, bool isListView, bool isMobile) {
+    final searchField = TextField(
+      onChanged: (val) => ref.read(staffSearchQueryProvider.notifier).updateQuery(val),
+      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+      decoration: InputDecoration(
+        hintText: 'Search staff by name or role...',
+        hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+        prefixIcon: Icon(LucideIcons.search, size: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Theme.of(context).dividerColor),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Theme.of(context).dividerColor),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      ),
+    );
+
+    return Row(
       children: [
-        SizedBox(
-          width: 300,
-          child: TextField(
-            onChanged: (val) => ref.read(staffSearchQueryProvider.notifier).updateQuery(val),
-            style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            decoration: InputDecoration(
-              hintText: 'Search staff by name or role...',
-              hintStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-              prefixIcon: Icon(LucideIcons.search, size: 18, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surface,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Theme.of(context).dividerColor),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Theme.of(context).dividerColor),
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        if (isMobile)
+          Expanded(child: searchField)
+        else
+          SizedBox(width: 300, child: searchField),
+        if (isMobile)
+          const SizedBox(width: 16)
+        else
+          const Spacer(),
+        if (!isMobile) ...[
+          Container(
+            height: 48,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Theme.of(context).dividerColor),
+            ),
+            child: ToggleButtons(
+              isSelected: [isListView, !isListView],
+              onPressed: (index) {
+                ref.read(isStaffListViewProvider.notifier).setMode(index == 0);
+              },
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+              selectedColor: Theme.of(context).colorScheme.primary,
+              fillColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(11),
+              constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+              children: const [
+                Icon(LucideIcons.list, size: 20),
+                Icon(LucideIcons.layoutGrid, size: 20),
+              ],
             ),
           ),
-        ),
-        Wrap(
-          spacing: 16,
-          runSpacing: 16,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            Container(
-              height: 48,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Theme.of(context).dividerColor),
-              ),
-              child: ToggleButtons(
-                isSelected: [isListView, !isListView],
-                onPressed: (index) {
-                  ref.read(isStaffListViewProvider.notifier).setMode(index == 0);
-                },
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                selectedColor: Theme.of(context).colorScheme.primary,
-                fillColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(11),
-                constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
-                children: const [
-                  Icon(LucideIcons.list, size: 20),
-                  Icon(LucideIcons.layoutGrid, size: 20),
-                ],
-              ),
+          const SizedBox(width: 16),
+        ],
+        SizedBox(
+          height: 48,
+          child: ElevatedButton.icon(
+            onPressed: () => showStaffDialog(context, ref),
+            icon: const Icon(LucideIcons.plus, size: 18),
+            label: const Text('Add Staff'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            const SizedBox(width: 16),
-            ElevatedButton.icon(
-              onPressed: () => showStaffDialog(context, ref),
-              icon: const Icon(LucideIcons.plus, size: 18),
-              label: const Text('Add Staff'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-          ],
+          ),
         ),
       ],
     );
@@ -504,7 +640,7 @@ class _StaffCard extends ConsumerWidget {
                   child: InteractiveViewer(
                     minScale: 1.0,
                     maxScale: 5.0,
-                    child: staff.imageUrl != null
+                    child: staff.imageUrl != null && staff.imageUrl!.isNotEmpty
                         ? Image.network(staff.imageUrl!, fit: BoxFit.cover)
                         : Container(
                             color: Theme.of(context).colorScheme.primary,
@@ -613,11 +749,14 @@ class _StaffCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final roleColor = _getRoleColor(staff.role);
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.3)),
+    return InkWell(
+      onTap: () => showStaffDetailsDialog(context, ref, staff),
+      borderRadius: BorderRadius.circular(24),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.3)),
         boxShadow: [
           BoxShadow(
             color: roleColor.withOpacity(0.08),
@@ -667,8 +806,8 @@ class _StaffCard extends ConsumerWidget {
                         child: CircleAvatar(
                           radius: 36,
                           backgroundColor: roleColor.withOpacity(0.1),
-                          backgroundImage: staff.imageUrl != null ? NetworkImage(staff.imageUrl!) : null,
-                          child: staff.imageUrl == null
+                          backgroundImage: staff.imageUrl != null && staff.imageUrl!.isNotEmpty ? NetworkImage(staff.imageUrl!) : null,
+                          child: staff.imageUrl == null || staff.imageUrl!.isEmpty
                               ? Text(
                                   staff.name.isNotEmpty ? staff.name[0].toUpperCase() : '?',
                                   style: TextStyle(color: roleColor, fontSize: 28, fontWeight: FontWeight.bold),
@@ -790,6 +929,7 @@ class _StaffCard extends ConsumerWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -818,7 +958,7 @@ class _StaffTableRow extends ConsumerWidget {
                   child: InteractiveViewer(
                     minScale: 1.0,
                     maxScale: 5.0,
-                    child: staff.imageUrl != null
+                    child: staff.imageUrl != null && staff.imageUrl!.isNotEmpty
                         ? Image.network(staff.imageUrl!, fit: BoxFit.cover)
                         : Container(
                             color: Theme.of(context).colorScheme.primary,
@@ -925,9 +1065,11 @@ class _StaffTableRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      child: Row(
+    return InkWell(
+      onTap: () => showStaffDetailsDialog(context, ref, staff),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Row(
         children: [
           // User Info
           Expanded(
@@ -938,8 +1080,8 @@ class _StaffTableRow extends ConsumerWidget {
                   onTap: () => _showFullImage(context),
                   child: CircleAvatar(
                     backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    backgroundImage: staff.imageUrl != null ? NetworkImage(staff.imageUrl!) : null,
-                    child: staff.imageUrl == null
+                    backgroundImage: staff.imageUrl != null && staff.imageUrl!.isNotEmpty ? NetworkImage(staff.imageUrl!) : null,
+                    child: staff.imageUrl == null || staff.imageUrl!.isEmpty
                         ? Text(
                             staff.name.isNotEmpty ? staff.name[0].toUpperCase() : '?',
                             style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
@@ -1045,6 +1187,7 @@ class _StaffTableRow extends ConsumerWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -1081,8 +1224,8 @@ void showStaffDetailsDialog(BuildContext context, WidgetRef ref, Staff staff) {
               CircleAvatar(
                 radius: 50,
                 backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                backgroundImage: staff.imageUrl != null ? NetworkImage(staff.imageUrl!) : null,
-                child: staff.imageUrl == null
+                backgroundImage: staff.imageUrl != null && staff.imageUrl!.isNotEmpty ? NetworkImage(staff.imageUrl!) : null,
+                child: staff.imageUrl == null || staff.imageUrl!.isEmpty
                     ? Icon(LucideIcons.user, size: 40, color: Theme.of(context).colorScheme.primary)
                     : null,
               ),
@@ -1102,9 +1245,151 @@ void showStaffDetailsDialog(BuildContext context, WidgetRef ref, Staff staff) {
               Row(
                 children: [
                   Expanded(child: _buildStaffInfoItem(context, LucideIcons.clock, 'Shift', staff.shift)),
-                  const Expanded(child: SizedBox()),
+                  const SizedBox(width: 16),
+                  Expanded(child: _buildStaffInfoItem(context, LucideIcons.calendarDays, 'Date of Birth', staff.dob != null ? DateFormat('MMM d, yyyy').format(staff.dob!) : 'N/A')),
                 ],
               ),
+              if (staff.idProofUrl != null && staff.idProofUrl!.isNotEmpty) ...[
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('ID Proof', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Theme.of(context).dividerColor),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(LucideIcons.fileText, color: Theme.of(context).colorScheme.primary),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text('ID Proof Document', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                      ),
+                      IconButton(
+                        icon: const Icon(LucideIcons.eye, size: 18),
+                        tooltip: 'View',
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => Dialog(
+                              backgroundColor: Colors.transparent,
+                              insetPadding: EdgeInsets.zero,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  InteractiveViewer(
+                                    minScale: 1.0,
+                                    maxScale: 5.0,
+                                    child: Image.network(
+                                      staff.idProofUrl!,
+                                      fit: BoxFit.contain,
+                                      errorBuilder: (context, error, stackTrace) => Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          const Icon(LucideIcons.fileWarning, size: 64, color: Colors.red),
+                                          const SizedBox(height: 16),
+                                          const Text('Image not available', style: TextStyle(color: Colors.white, fontSize: 16)),
+                                          const SizedBox(height: 8),
+                                          const Text('The temporary file is no longer in memory.', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  Positioned(
+                                    top: 16,
+                                    right: 16,
+                                    child: IconButton(
+                                      icon: const Icon(LucideIcons.x, color: Colors.white, size: 30),
+                                      onPressed: () => Navigator.pop(context),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(LucideIcons.download, size: 18),
+                        tooltip: 'Download',
+                        onPressed: () async {
+                          final url = Uri.parse(staff.idProofUrl!);
+                          if (await canLaunchUrl(url)) {
+                            await launchUrl(url, mode: LaunchMode.externalApplication);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Could not download file. The link may have expired.'), backgroundColor: Colors.red));
+                          }
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(LucideIcons.trash2, size: 18, color: Colors.red),
+                        tooltip: 'Remove',
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (ctx) => AlertDialog(
+                              backgroundColor: Theme.of(context).colorScheme.surface,
+                              title: const Text('Remove ID Proof?'),
+                              content: const Text('Are you sure you want to remove this ID proof?'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    try {
+                                      await ref.read(apiServiceProvider).deleteFile(staff.idProofUrl!);
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Warning: Failed to delete file from cloud: $e'), backgroundColor: Colors.orange),
+                                        );
+                                      }
+                                    }
+                                    
+                                    final updatedStaff = Staff(
+                                      id: staff.id,
+                                      name: staff.name,
+                                      role: staff.role,
+                                      shift: staff.shift,
+                                      phone: staff.phone,
+                                      email: staff.email,
+                                      imageUrl: staff.imageUrl,
+                                      idProofUrl: '', // Clear the ID proof
+                                    );
+                                    ref.read(staffProvider.notifier).updateStaff(updatedStaff);
+                                    if (context.mounted) {
+                                      Navigator.pop(ctx); // Close confirmation
+                                      Navigator.pop(context); // Close details dialog
+                                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('ID Proof removed.'), backgroundColor: Colors.green));
+                                    }
+                                  },
+                                  child: const Text('Remove', style: TextStyle(color: Colors.red)),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ],
           ),
         ),

@@ -162,19 +162,7 @@ export const updateProfileImage = async (req: AuthRequest, res: Response): Promi
       return;
     }
 
-    const backendUrl = process.env.BACKEND_URL;
-    const profileImage = `${backendUrl}/uploads/${req.file.filename}`;
-
-    // Delete previous avatar if it exists locally
-    if (user.profileImage && user.profileImage.includes('/uploads/')) {
-      const oldFilename = user.profileImage.split('/').pop();
-      if (oldFilename) {
-        const oldFilePath = path.join(__dirname, '../../uploads', oldFilename);
-        if (fs.existsSync(oldFilePath)) {
-          fs.unlinkSync(oldFilePath);
-        }
-      }
-    }
+    const profileImage = req.file.path;
 
     // Update user
     const updatedUser = await User.findByIdAndUpdate(
@@ -203,21 +191,10 @@ export const updateGymLogo = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const backendUrl = process.env.BACKEND_URL;
-    const logoUrl = `${backendUrl}/uploads/${req.file.filename}`;
+    const logoUrl = req.file.path;
 
     let gym = await Gym.findOne({ ownerId: user._id });
     if (gym) {
-      // Delete previous logo if it exists locally
-      if (gym.logo && gym.logo.includes('/uploads/')) {
-        const oldFilename = gym.logo.split('/').pop();
-        if (oldFilename) {
-          const oldFilePath = path.join(__dirname, '../../uploads', oldFilename);
-          if (fs.existsSync(oldFilePath)) {
-            fs.unlinkSync(oldFilePath);
-          }
-        }
-      }
 
       gym.logo = logoUrl;
       await gym.save();
@@ -239,8 +216,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
     let profileImage = '';
 
     if (req.file) {
-      const backendUrl = process.env.BACKEND_URL;
-      profileImage = `${backendUrl}/uploads/${req.file.filename}`;
+      profileImage = req.file.path;
     }
 
     if (!name || !email || !password) {

@@ -11,6 +11,7 @@ export interface IMember extends Document {
   expiryDate: Date;
   totalCheckIns: number;
   imageUrl?: string;
+  dob?: Date;
   address?: string;
   documentUrl?: string;
   trainerId?: mongoose.Types.ObjectId;
@@ -30,6 +31,7 @@ const MemberSchema: Schema = new Schema(
     expiryDate: { type: Date, required: true },
     totalCheckIns: { type: Number, default: 0 },
     imageUrl: { type: String, default: '' },
+    dob: { type: Date },
     address: { type: String, default: '' },
     documentUrl: { type: String, default: '' },
     trainerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Trainer' },

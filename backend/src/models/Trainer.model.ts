@@ -6,6 +6,7 @@ export interface ITrainer extends Document {
   specialization: string;
   assignedMembers: number;
   rating: number;
+  dob?: Date;
   imageUrl?: string;
   email: string;
   phone: string;
@@ -23,6 +24,7 @@ const TrainerSchema: Schema = new Schema(
     specialization: { type: String, required: true },
     assignedMembers: { type: Number, default: 0 },
     rating: { type: Number, default: 0.0 },
+    dob: { type: Date },
     imageUrl: { type: String, default: '' },
     email: { type: String, default: '' },
     phone: { type: String, default: '' },

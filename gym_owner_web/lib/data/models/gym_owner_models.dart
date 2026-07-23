@@ -9,6 +9,7 @@ class Member {
   final DateTime expiryDate;
   final int totalCheckIns;
   final String? imageUrl;
+  final DateTime? dob;
   final String address;
   final String? documentUrl;
   final String? trainerId;
@@ -24,6 +25,7 @@ class Member {
     required this.expiryDate,
     required this.totalCheckIns,
     this.imageUrl,
+    this.dob,
     this.address = '',
     this.documentUrl,
     this.trainerId,
@@ -41,6 +43,7 @@ class Member {
       expiryDate: json['expiryDate'] != null ? DateTime.parse(json['expiryDate']) : DateTime.now(),
       totalCheckIns: json['totalCheckIns'] ?? 0,
       imageUrl: json['imageUrl'],
+      dob: json['dob'] != null ? DateTime.parse(json['dob']) : null,
       address: json['address'] ?? '',
       documentUrl: json['documentUrl'],
       trainerId: json['trainerId'],
@@ -59,6 +62,7 @@ class Member {
       'expiryDate': expiryDate.toIso8601String(),
       'totalCheckIns': totalCheckIns,
       if (imageUrl != null) 'imageUrl': imageUrl,
+      if (dob != null) 'dob': dob!.toIso8601String(),
       'address': address,
       if (documentUrl != null) 'documentUrl': documentUrl,
       if (trainerId != null) 'trainerId': trainerId,
@@ -72,6 +76,7 @@ class Trainer {
   final String specialization;
   final int assignedMembers;
   final double rating;
+  final DateTime? dob;
   final String? imageUrl;
   final String email;
   final String phone;
@@ -85,6 +90,7 @@ class Trainer {
     required this.specialization,
     required this.assignedMembers,
     required this.rating,
+    this.dob,
     this.imageUrl,
     this.email = '',
     this.phone = '',
@@ -100,6 +106,7 @@ class Trainer {
       specialization: json['specialization'] ?? '',
       assignedMembers: json['assignedMembers'] ?? 0,
       rating: (json['rating'] ?? 0.0).toDouble(),
+      dob: json['dob'] != null ? DateTime.parse(json['dob']) : null,
       imageUrl: json['imageUrl'],
       email: json['email'] ?? '',
       phone: json['phone'] ?? '',
@@ -121,6 +128,7 @@ class Trainer {
       'experienceYears': experienceYears,
       'about': about,
       'certificates': certificates,
+      if (dob != null) 'dob': dob!.toIso8601String(),
       if (imageUrl != null) 'imageUrl': imageUrl,
     };
   }
@@ -153,6 +161,7 @@ class Staff {
   final String shift;
   final String phone;
   final String email;
+  final DateTime? dob;
   final String? imageUrl;
   final String? idProofUrl;
 
@@ -163,6 +172,7 @@ class Staff {
     required this.shift,
     this.phone = '',
     this.email = '',
+    this.dob,
     this.imageUrl,
     this.idProofUrl,
   });
@@ -175,6 +185,7 @@ class Staff {
       shift: json['shift'] ?? '',
       phone: json['phone'] ?? '',
       email: json['email'] ?? '',
+      dob: json['dob'] != null ? DateTime.parse(json['dob']) : null,
       imageUrl: json['imageUrl'],
       idProofUrl: json['idProofUrl'],
     );
@@ -188,6 +199,7 @@ class Staff {
       'shift': shift,
       'phone': phone,
       'email': email,
+      if (dob != null) 'dob': dob!.toIso8601String(),
       if (imageUrl != null) 'imageUrl': imageUrl,
       if (idProofUrl != null) 'idProofUrl': idProofUrl,
     };
@@ -579,6 +591,18 @@ class AppNotification {
       type: type ?? this.type,
       isRead: isRead ?? this.isRead,
       targetRoute: targetRoute ?? this.targetRoute,
+    );
+  }
+
+  factory AppNotification.fromJson(Map<String, dynamic> json) {
+    return AppNotification(
+      id: json['_id'] ?? '',
+      title: json['title'] ?? '',
+      message: json['message'] ?? '',
+      timestamp: json['createdAt'] != null ? DateTime.parse(json['createdAt']) : DateTime.now(),
+      type: json['type'] ?? 'System',
+      isRead: json['isRead'] ?? false,
+      targetRoute: json['targetRoute'],
     );
   }
 }

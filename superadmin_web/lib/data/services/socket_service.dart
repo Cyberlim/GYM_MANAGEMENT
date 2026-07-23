@@ -14,6 +14,8 @@ class SocketService {
   Function(Map<String, dynamic>)? onNewMessage;
   // Callback for notifications
   Function(Map<String, dynamic>)? onNewNotification;
+  // Callback for broadcast read
+  Function(Map<String, dynamic>)? onBroadcastRead;
 
   void initSocket(String adminId) {
     if (_socket != null && _socket!.connected) return;
@@ -28,6 +30,7 @@ class SocketService {
     _socket!.onConnect((_) {
       debugPrint('Superadmin Socket connected');
       _socket!.emit('join', adminId);
+      _socket!.emit('join_superadmin');
       for (final room in _suspensionRooms) {
         _socket!.emit('join_suspension', room);
       }
@@ -44,6 +47,13 @@ class SocketService {
       debugPrint('Received notification event: $data');
       if (onNewNotification != null) {
         onNewNotification!(data);
+      }
+    });
+
+    _socket!.on('broadcast_read', (data) {
+      debugPrint('Received broadcast_read event: $data');
+      if (onBroadcastRead != null) {
+        onBroadcastRead!(data);
       }
     });
 

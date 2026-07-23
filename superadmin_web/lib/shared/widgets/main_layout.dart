@@ -372,6 +372,7 @@ class _Sidebar extends StatelessWidget {
                   const Padding(padding: EdgeInsets.only(left: 24, top: 24, bottom: 8), child: Text('SUPPORT', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w600))),
                   
                 _SidebarItem(icon: LucideIcons.lifeBuoy, title: 'Support', isTablet: isTablet, isMobile: isMobile, isSelected: currentTitle == 'Support', route: '/support'),
+                _SidebarItem(icon: LucideIcons.radio, title: 'Broadcast', isTablet: isTablet, isMobile: isMobile, isSelected: currentTitle == 'Broadcast', route: '/broadcast'),
 
                 if (!isTablet || isMobile)
                   const Padding(padding: EdgeInsets.only(left: 24, top: 24, bottom: 8), child: Text('SYSTEM', style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w600))),
@@ -501,27 +502,38 @@ class _TopNavigationBar extends ConsumerWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Greeting
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Good Morning, Super Admin! 👋',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Hello${profile.fullName.isNotEmpty ? ', ${profile.fullName}' : ''}! 👋',
+                  style: TextStyle(
+                    fontSize: isMobileOrTablet ? 16 : 22,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Here\'s what\'s happening on the platform today.',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                  fontSize: 13,
-                ),
-              ),
-            ],
+                if (!isMobileOrTablet) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Here\'s what\'s happening on the platform today.',
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                      fontSize: 13,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
           ),
+          
+          if (!isMobileOrTablet)
+            const SizedBox(width: 16),
           
           // Right Side Actions
           Row(

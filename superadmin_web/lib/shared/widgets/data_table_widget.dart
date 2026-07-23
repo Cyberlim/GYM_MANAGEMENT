@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class DataTableWidget extends StatelessWidget {
   final List<String> columns;
   final List<List<Widget>> rows;
+  final void Function(int index)? onRowTap;
 
   const DataTableWidget({
     super.key,
     required this.columns,
     required this.rows,
+    this.onRowTap,
   });
 
   @override
@@ -22,18 +24,25 @@ class DataTableWidget extends StatelessWidget {
           ),
           dataTextStyle: Theme.of(context).textTheme.bodyMedium,
           dividerThickness: 1,
+          showCheckboxColumn: false,
           columns: columns
               .map((c) => DataColumn(
                     label: Text(c),
                   ))
               .toList(),
-          rows: rows
-              .map(
-                (row) => DataRow(
-                  cells: row.map((cell) => DataCell(cell)).toList(),
-                ),
-              )
-              .toList(),
+          rows: rows.asMap().entries.map(
+                (entry) {
+                  final index = entry.key;
+                  final row = entry.value;
+                  return DataRow(
+                    onSelectChanged: onRowTap != null ? (_) => onRowTap!(index) : null,
+                    cells: row.map((cell) => DataCell(
+                      // Wrap in GestureDetector to ensure taps propagate properly for complex cells
+                      onRowTap != null ? IgnorePointer(child: cell) : cell
+                    )).toList(),
+                  );
+                },
+              ).toList(),
         ),
       ),
     );

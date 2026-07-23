@@ -81,7 +81,15 @@ class ApiService {
     final response = await http.Response.fromStream(streamedResponse);
     
     final result = _processResponse(response);
-    return result?['url'] as String?;
+    String? url = result?['url'] as String?;
+    if (url != null && url.startsWith('/')) {
+      url = '${Env.baseUrl}$url';
+    }
+    return url;
+  }
+
+  Future<void> deleteFile(String url) async {
+    await delete('/upload?url=${Uri.encodeQueryComponent(url)}');
   }
 
   dynamic _processResponse(http.Response response) {

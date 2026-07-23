@@ -5,9 +5,11 @@ import 'package:superadmin_web/core/theme/theme_provider.dart';
 import 'package:superadmin_web/core/router/app_router.dart';
 
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  usePathUrlStrategy();
   await dotenv.load(fileName: ".env");
   runApp(
     const ProviderScope(child: SuperAdminApp()));

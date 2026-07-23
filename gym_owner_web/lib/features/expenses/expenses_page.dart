@@ -163,32 +163,32 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
               children: [
             SizedBox(
               width: double.infinity,
-              child: Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 16,
-                runSpacing: 16,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Expenses',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.onSurface,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Expenses',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Manage outgoing costs and overheads',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Manage outgoing costs and overheads',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 16),
                   ElevatedButton.icon(
                     onPressed: () => _showAddExpenseDialog(context, ref),
                     icon: const Icon(LucideIcons.plus, size: 18),
@@ -204,27 +204,19 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
               ),
             ),
             const SizedBox(height: 24),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final isDesktop = constraints.maxWidth > 800;
-                if (isDesktop) {
-                  return Row(
-                    children: [
-                      Expanded(child: _StatCard(title: 'Total Expenses', amount: totalExpenses, icon: LucideIcons.trendingDown, color: Colors.redAccent)),
-                      const SizedBox(width: 16),
-                      Expanded(child: _StatCard(title: 'Pending Bills', amount: pendingExpenses, icon: LucideIcons.clock, color: Colors.orange)),
-                    ],
-                  );
-                }
-                return Wrap(
-                  spacing: 16,
-                  runSpacing: 16,
-                  children: [
-                    SizedBox(width: 250, child: _StatCard(title: 'Total Expenses', amount: totalExpenses, icon: LucideIcons.trendingDown, color: Colors.redAccent)),
-                    SizedBox(width: 250, child: _StatCard(title: 'Pending Bills', amount: pendingExpenses, icon: LucideIcons.clock, color: Colors.orange)),
-                  ],
-                );
-              }
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 516),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _StatCard(title: 'Total Expenses', amount: totalExpenses, icon: LucideIcons.trendingDown, color: Colors.redAccent),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _StatCard(title: 'Pending Bills', amount: pendingExpenses, icon: LucideIcons.clock, color: Colors.orange),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 32),
             Row(
@@ -245,67 +237,78 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
             Expanded(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final listWidth = constraints.maxWidth > 800 ? constraints.maxWidth : 800.0;
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints.tightFor(
-                        width: listWidth,
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                  final isMobile = MediaQuery.of(context).size.width < 900;
+                  final listWidth = isMobile ? constraints.maxWidth : (constraints.maxWidth > 800 ? constraints.maxWidth : 800.0);
+                  
+                  Widget content = Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (!isMobile) ...[
+                        Padding(
+                          padding: const EdgeInsets.only(left: 24, right: 24, top: 20, bottom: 8),
+                          child: Row(
+                            children: [
+                              const SizedBox(width: 56), // Icon placeholder
+                              Expanded(
+                                flex: 2,
+                                child: Text('Title', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: Text('Category', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: Text('Date', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
+                              ),
+                            ],
+                          ),
                         ),
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(left: 24, right: 24, top: 20, bottom: 8),
-                              child: Row(
-                                children: [
-                                  const SizedBox(width: 56), // Icon placeholder
-                                  Expanded(
-                                    flex: 2,
-                                    child: Text('Title', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                                  ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: Text('Category', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                                  ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: Text('Date', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                                  ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: Text('Amount', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                                  ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: Text('Status', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                            Expanded(
-                              child: ListView.separated(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                itemCount: sortedExpenses.length,
-                                separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                                itemBuilder: (context, index) {
-                                  final expense = sortedExpenses[index];
-                                  final isHighlighted = expense.id == highlightId;
-                                  return _ExpenseRow(expense: expense, isHighlighted: isHighlighted);
-                                },
-                              ),
-                            ),
-                          ],
+                        Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                      ],
+                      Expanded(
+                        child: ListView.separated(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          itemCount: sortedExpenses.length,
+                          separatorBuilder: (context, index) => isMobile ? const SizedBox(height: 16) : Divider(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                          itemBuilder: (context, index) {
+                            final expense = sortedExpenses[index];
+                            final isHighlighted = expense.id == highlightId;
+                            return _ExpenseRow(expense: expense, isHighlighted: isHighlighted);
+                          },
                         ),
                       ),
-                    ),
+                    ],
                   );
+
+                  if (isMobile) {
+                    return content;
+                  } else {
+                    return SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints.tightFor(
+                          width: listWidth,
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                          ),
+                          child: content,
+                        ),
+                      ),
+                    );
+                  }
                 }
               ),
             ),
@@ -552,13 +555,20 @@ class _StatCard extends StatelessWidget {
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(width: 16),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 14)),
-              const SizedBox(height: 4),
-              Text('₹${amount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(title, style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6), fontSize: 14)),
+                const SizedBox(height: 4),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text('₹${amount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -606,6 +616,126 @@ class _ExpenseRow extends ConsumerWidget {
 
     Color statusColor = expense.status == 'Paid' ? Colors.green : Colors.orange;
     IconData statusIcon = expense.status == 'Paid' ? LucideIcons.checkCircle2 : LucideIcons.clock;
+    final isMobile = MediaQuery.of(context).size.width < 900;
+
+    if (isMobile) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: categoryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(categoryIcon, color: categoryColor, size: 20),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(expense.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Text(
+                        DateFormat('MMM dd, yyyy').format(expense.date),
+                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7), fontSize: 12),
+                        maxLines: 1, overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                if (DateTime.now().difference(expense.date).inDays <= (expense.status == 'Pending' ? 10 : 2))
+                  PopupMenuButton<String>(
+                    icon: Icon(LucideIcons.moreVertical, size: 20, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        _showAddExpenseDialog(context, ref, expense);
+                      } else if (value == 'delete') {
+                        ref.read(expensesProvider.notifier).removeExpense(expense.id);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(LucideIcons.edit2, size: 16),
+                            SizedBox(width: 8),
+                            Text('Edit'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(LucideIcons.trash2, size: 16, color: Colors.red),
+                            SizedBox(width: 8),
+                            Text('Delete', style: TextStyle(color: Colors.red)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: categoryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    expense.category,
+                    style: TextStyle(
+                      color: categoryColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+                Text(
+                  '₹${expense.amount.toStringAsFixed(2)}',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, size: 14, color: statusColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        expense.status,
+                        style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
       color: isHighlighted ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : Colors.transparent,

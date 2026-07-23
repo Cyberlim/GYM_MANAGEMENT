@@ -250,48 +250,56 @@ class InventoryPage extends ConsumerWidget {
             // Inventory List
             LayoutBuilder(
               builder: (context, constraints) {
-                final listWidth = constraints.maxWidth > 800 ? constraints.maxWidth : 800.0;
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints.tightFor(
-                      width: listWidth,
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                      ),
-                      child: inventoryAsync.when(
-                        loading: () => const Padding(
-                          padding: EdgeInsets.all(32.0),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                        error: (error, stack) => Padding(
-                          padding: const EdgeInsets.all(32.0),
-                          child: Center(child: Text('Error: $error')),
-                        ),
-                        data: (inventory) => inventory.isEmpty
-                            ? const Padding(
-                                padding: EdgeInsets.all(32.0),
-                                child: Center(child: Text('No inventory items found.')),
-                              )
-                            : ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: inventory.length,
-                                separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2), height: 1),
-                                itemBuilder: (context, index) {
-                                  final item = inventory[index];
-                                  final isHighlighted = item.id == highlightId;
-                                  return _InventoryRow(item: item, isHighlighted: isHighlighted);
-                                },
-                              ),
-                      ),
-                    ),
+                final isMobile = MediaQuery.of(context).size.width < 900;
+                final listWidth = isMobile ? constraints.maxWidth : (constraints.maxWidth > 800 ? constraints.maxWidth : 800.0);
+                
+                Widget content = inventoryAsync.when(
+                  loading: () => const Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: Center(child: CircularProgressIndicator()),
                   ),
+                  error: (error, stack) => Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Center(child: Text('Error: $error')),
+                  ),
+                  data: (inventory) => inventory.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.all(32.0),
+                          child: Center(child: Text('No inventory items found.')),
+                        )
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: inventory.length,
+                          separatorBuilder: (context, index) => isMobile ? const SizedBox(height: 16) : Divider(color: Theme.of(context).dividerColor.withOpacity(0.2), height: 1),
+                          itemBuilder: (context, index) {
+                            final item = inventory[index];
+                            final isHighlighted = item.id == highlightId;
+                            return _InventoryRow(item: item, isHighlighted: isHighlighted);
+                          },
+                        ),
                 );
+
+                if (isMobile) {
+                  return content;
+                } else {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints.tightFor(
+                        width: listWidth,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                        ),
+                        child: content,
+                      ),
+                    ),
+                  );
+                }
               }
             ),
           ],
@@ -485,6 +493,137 @@ class _InventoryRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statusColor = _getStatusColor(item.status);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isMobile = MediaQuery.of(context).size.width < 900;
+
+    if (isMobile) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            showDialog(
+              context: context,
+              builder: (context) => _InventoryDetailsDialog(item: item),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.5)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(_getCategoryIcon(item.category), color: Theme.of(context).colorScheme.primary),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(item.itemName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          const SizedBox(height: 4),
+                          Text(
+                            item.category,
+                            style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                            maxLines: 1, overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: Icon(LucideIcons.moreVertical, size: 20, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          final parent = context.findAncestorStateOfType<ConsumerState<InventoryPage>>();
+                          if (parent == null) {
+                            showDialog(
+                              context: context,
+                              builder: (context) => _AddInventoryDialog(itemToEdit: item),
+                            );
+                          }
+                        } else if (value == 'delete') {
+                          ref.read(inventoryProvider.notifier).removeItem(item.id);
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(LucideIcons.edit2, size: 16),
+                              SizedBox(width: 8),
+                              Text('Edit'),
+                            ],
+                          ),
+                        ),
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(LucideIcons.trash2, size: 16, color: Colors.red),
+                              SizedBox(width: 8),
+                              Text('Delete', style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Qty', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        const SizedBox(height: 4),
+                        Text('${item.quantity} ${item.unit}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Price', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        const SizedBox(height: 4),
+                        Text('₹${item.purchasePrice.toStringAsFixed(2)}', style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isDark ? statusColor.withOpacity(0.2) : statusColor.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: isDark ? Border.all(color: statusColor.withOpacity(0.5)) : null,
+                      ),
+                      child: Text(
+                        item.status,
+                        style: TextStyle(
+                          color: isDark ? statusColor.shade300 : statusColor.shade700,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     return Material(
       color: Colors.transparent,

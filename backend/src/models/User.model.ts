@@ -22,6 +22,7 @@ export interface IUser extends Document {
     paymentReceived: boolean;
     paymentFailures: boolean;
   };
+  pushSubscriptions?: any[];
   twoFactorMethod: 'none' | 'email' | 'app';
   twoFactorSecret?: string | undefined;
   twoFactorOTP?: string | undefined;
@@ -56,6 +57,7 @@ const UserSchema: Schema = new Schema(
       paymentReceived: { type: Boolean, default: true },
       paymentFailures: { type: Boolean, default: true },
     },
+    pushSubscriptions: { type: [Schema.Types.Mixed], default: [] },
     twoFactorMethod: { type: String, enum: ['none', 'email', 'app'], default: 'none' },
     twoFactorSecret: { type: String },
     twoFactorOTP: { type: String },

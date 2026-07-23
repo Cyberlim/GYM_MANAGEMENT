@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import '../../core/theme/app_theme.dart';
-import 'broadcast_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:superadmin_web/features/broadcast/broadcast_provider.dart';
+import 'package:superadmin_web/core/theme/app_theme.dart';
+import 'package:superadmin_web/data/services/socket_service.dart';
 
 class BroadcastPage extends ConsumerStatefulWidget {
   const BroadcastPage({super.key});
@@ -110,22 +111,19 @@ class _BroadcastPageState extends ConsumerState<BroadcastPage> with SingleTicker
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: AppBar(
-          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-          elevation: 0,
-          title: Text('Broadcast Messages', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-          bottom: TabBar(
-            controller: _tabController,
-            labelColor: AppTheme.primaryColor,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: AppTheme.primaryColor,
-            tabs: const [
-              Tab(text: 'Compose'),
-              Tab(text: 'History'),
-            ],
-          ),
+      appBar: AppBar(
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        elevation: 0,
+        title: Text('Broadcast Messages', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: AppTheme.primaryColor,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: AppTheme.primaryColor,
+          tabs: const [
+            Tab(text: 'Compose'),
+            Tab(text: 'History'),
+          ],
         ),
       ),
       body: TabBarView(
@@ -406,49 +404,81 @@ class _BroadcastHistoryTabState extends ConsumerState<_BroadcastHistoryTab> {
     if (!mounted) return;
     Navigator.of(context, rootNavigator: true).pop(); // dismiss loading
 
-    final seenList = statusList.where((s) => s.isRead).toList();
-    final unseenList = statusList.where((s) => !s.isRead).toList();
+    final socketService = SocketService();
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('Status: ${item.subject}'),
-        content: SizedBox(
-          width: 500,
-          height: 400,
-          child: ListView(
-            children: [
-              if (seenList.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.all(12.0),
-                  child: Text('Seen', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 16)),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            socketService.onBroadcastRead = (data) {
+              if (data['broadcastId'] == item.id) {
+                final userId = data['userId'];
+                final readAt = data['readAt'];
+                
+                setState(() {
+                  for (int i = 0; i < statusList.length; i++) {
+                    if (statusList[i].userId == userId) {
+                      statusList[i] = BroadcastStatusItem(
+                        userId: statusList[i].userId,
+                        ownerName: statusList[i].ownerName,
+                        gymName: statusList[i].gymName,
+                        isRead: true,
+                        readAt: readAt != null ? DateTime.parse(readAt) : DateTime.now(),
+                      );
+                      break;
+                    }
+                  }
+                });
+              }
+            };
+
+            final seenList = statusList.where((s) => s.isRead).toList();
+            final unseenList = statusList.where((s) => !s.isRead).toList();
+
+            return AlertDialog(
+              title: Text('Status: ${item.subject}'),
+              content: SizedBox(
+                width: 500,
+                height: 400,
+                child: ListView(
+                  children: [
+                    if (seenList.isNotEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.all(12.0),
+                        child: Text('Seen', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 16)),
+                      ),
+                      ...seenList.map((status) => _buildStatusTile(status)),
+                      if (unseenList.isNotEmpty) const Divider(),
+                    ],
+                    if (unseenList.isNotEmpty) ...[
+                      const Padding(
+                        padding: EdgeInsets.all(12.0),
+                        child: Text('Unseen', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, fontSize: 16)),
+                      ),
+                      ...unseenList.map((status) => _buildStatusTile(status)),
+                    ],
+                    if (statusList.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(24.0),
+                        child: Center(child: Text('No recipients found.')),
+                      ),
+                  ],
                 ),
-                ...seenList.map((status) => _buildStatusTile(status)),
-                if (unseenList.isNotEmpty) const Divider(),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Close'),
+                ),
               ],
-              if (unseenList.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.all(12.0),
-                  child: Text('Unseen', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange, fontSize: 16)),
-                ),
-                ...unseenList.map((status) => _buildStatusTile(status)),
-              ],
-              if (statusList.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(24.0),
-                  child: Center(child: Text('No recipients found.')),
-                ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
-          ),
-        ],
-      ),
-    );
+            );
+          },
+        );
+      },
+    ).then((_) {
+      socketService.onBroadcastRead = null;
+    });
   }
 
   Widget _buildStatusTile(BroadcastStatusItem status) {

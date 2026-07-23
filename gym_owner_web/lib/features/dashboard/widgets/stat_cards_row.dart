@@ -75,10 +75,10 @@ class StatCardsRow extends StatelessWidget {
       builder: (context, constraints) {
         final statCards = _buildStatCards();
         int crossAxisCount;
-        if (constraints.maxWidth < 500) {
-          crossAxisCount = 1;
+        if (constraints.maxWidth < 320) {
+          crossAxisCount = 1; // Only 1 column for extremely small screens
         } else if (constraints.maxWidth < 800) {
-          crossAxisCount = 2;
+          crossAxisCount = 2; // Pair (2 columns) for mobile and small tablets
         } else if (constraints.maxWidth < 1100) {
           crossAxisCount = 4;
         } else {

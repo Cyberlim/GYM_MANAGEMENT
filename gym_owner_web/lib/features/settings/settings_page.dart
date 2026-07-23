@@ -1,3 +1,4 @@
+// ignore_for_file: avoid_web_libraries_in_flutter, uri_does_not_exist, deprecated_member_use
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -5,6 +6,11 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'dart:convert';
 import 'package:pinput/pinput.dart';
 import 'package:gym_owner_web/core/providers/user_provider.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:js' as js;
+import 'dart:js_util' as js_util;
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -22,11 +28,89 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final newSettings = Map<String, dynamic>.from(currentSettings);
     newSettings[key] = value;
 
+    if (key == 'pushNotifications') {
+      try {
+        final baseUrl = dotenv.env['API_URL'] ?? 'http://localhost:5000/api';
+        final prefs = await SharedPreferences.getInstance();
+        final token = prefs.getString('token');
+        final headers = {
+          'Content-Type': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        };
+
+        if (value == true) {
+          // Fetch VAPID key
+          final response = await http.get(Uri.parse('$baseUrl/notifications/vapid-public-key'), headers: headers);
+          if (response.statusCode == 200) {
+            final vapidKey = jsonDecode(response.body)['publicKey'];
+            // Call JS Interop
+            final promise = js_util.callMethod(js_util.globalThis, 'subscribeToPushNotifications', [vapidKey]);
+            final subscriptionStr = await js_util.promiseToFuture(promise);
+            
+            // Send subscription to backend
+            final subResponse = await http.post(
+              Uri.parse('$baseUrl/notifications/subscribe'),
+              headers: headers,
+              body: jsonEncode({'subscription': jsonDecode(subscriptionStr)}),
+            );
+            
+            if (subResponse.statusCode == 200 || subResponse.statusCode == 201) {
+              // Success, message will be shown at the end
+            } else {
+              throw Exception('Backend returned ${subResponse.statusCode}');
+            }
+          } else {
+            throw Exception('Could not fetch VAPID key');
+          }
+        } else {
+          // Unsubscribe
+          final promise = js_util.callMethod(js_util.globalThis, 'unsubscribeFromPushNotifications', []);
+          final endpointStr = await js_util.promiseToFuture(promise);
+          if (endpointStr != null) {
+            final unsubResponse = await http.post(
+              Uri.parse('$baseUrl/notifications/unsubscribe'),
+              headers: headers,
+              body: endpointStr, // already JSON encoded like {"endpoint": "..."}
+            );
+            
+            if (unsubResponse.statusCode == 200) {
+              // Success, message will be shown at the end
+            } else {
+              throw Exception('Backend returned ${unsubResponse.statusCode}');
+            }
+          } else {
+             // Success, message will be shown at the end
+          }
+        }
+      } catch (e) {
+        print('Error handling push notification toggling: $e');
+        if (mounted) {
+          // Revert the setting since it failed
+          setState(() {
+            newSettings['pushNotifications'] = !(value as bool);
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Setup Error: ${e.toString()}'), backgroundColor: Colors.red),
+          );
+        }
+        return; // Prevent saving the setting to backend if setup failed
+      }
+    }
+
     try {
       await ref.read(userProvider.notifier).updateSettings(newSettings);
       if (mounted) {
+        String successMessage = 'Setting updated successfully';
+        if (key == 'emailNotifications') {
+          successMessage = (value as bool) ? 'Email notifications enabled successfully' : 'Email notifications disabled successfully';
+        } else if (key == 'pushNotifications') {
+          successMessage = (value as bool) ? 'Push notifications enabled successfully' : 'Push notifications disabled successfully';
+        } else if (key == 'twoFactorEnabled') {
+          successMessage = (value as bool) ? 'Two-Factor Authentication enabled successfully' : 'Two-Factor Authentication disabled successfully';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Setting updated successfully'), duration: Duration(seconds: 2), backgroundColor: Colors.green),
+          SnackBar(content: Text(successMessage), duration: const Duration(seconds: 2), backgroundColor: Colors.green),
         );
       }
     } catch (e) {
@@ -282,7 +366,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final settings = userData?.user['settings'] ?? {};
 
     final emailNotifications = settings['emailNotifications'] ?? true;
-    final pushNotifications = settings['pushNotifications'] ?? true;
+    final pushNotifications = settings['pushNotifications'] ?? false;
     final twoFactorEnabled = settings['twoFactorEnabled'] ?? false;
 
     return SingleChildScrollView(

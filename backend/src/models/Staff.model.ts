@@ -7,6 +7,7 @@ export interface IStaff extends Document {
   shift: string;
   phone: string;
   email: string;
+  dob?: Date;
   imageUrl?: string;
   idProofUrl?: string;
   createdAt: Date;
@@ -21,6 +22,7 @@ const StaffSchema: Schema = new Schema(
     shift: { type: String, required: true },
     phone: { type: String, default: '' },
     email: { type: String, default: '' },
+    dob: { type: Date },
     imageUrl: { type: String, default: '' },
     idProofUrl: { type: String, default: '' },
   },

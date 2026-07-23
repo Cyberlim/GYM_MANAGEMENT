@@ -44,20 +44,21 @@ final appRouter = GoRouter(
                           state.uri.path == '/forgot-password' || 
                           state.uri.path == '/';
 
-    if (token == null && !isPublicRoute) {
-      return '/login';
+    if (token == null) {
+      if (!isPublicRoute) return '/login';
+      return null;
     }
 
-    if (token != null) {
-      final isOnboardingRoute = state.uri.path == '/gym-setup' ||
-                                state.uri.path == '/start-trial' ||
-                                state.uri.path == '/choose-plan' ||
-                                state.uri.path == '/payment' ||
-                                state.uri.path == '/success';
-                                
-      if (!isGymSetup && !isOnboardingRoute && !isPublicRoute) {
-        return '/gym-setup';
-      }
+    final isOnboardingRoute = state.uri.path == '/gym-setup' ||
+                              state.uri.path == '/start-trial' ||
+                              state.uri.path == '/choose-plan' ||
+                              state.uri.path == '/payment' ||
+                              state.uri.path == '/success';
+                              
+    if (!isGymSetup) {
+      if (!isOnboardingRoute) return '/gym-setup';
+    } else {
+      if (isPublicRoute || isOnboardingRoute) return '/dashboard';
     }
     
     return null;

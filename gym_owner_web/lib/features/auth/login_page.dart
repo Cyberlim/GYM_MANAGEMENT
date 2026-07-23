@@ -111,14 +111,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('token', response['token']);
           
-          ref.read(userProvider.notifier).refresh();
+          await ref.read(userProvider.notifier).refresh();
 
           if (mounted) {
-            if (response['isNewUser'] == true) {
-              await prefs.setBool('isGymSetup', false);
+            final prefs = await SharedPreferences.getInstance();
+            final isSetup = prefs.getBool('isGymSetup') ?? false;
+            if (!isSetup) {
               context.go('/gym-setup');
             } else {
-              await prefs.setBool('isGymSetup', true);
               context.go('/dashboard');
             }
           }
@@ -165,10 +165,16 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', response['token']);
         
-        ref.read(userProvider.notifier).refresh();
+        await ref.read(userProvider.notifier).refresh();
 
         if (mounted) {
-          context.go('/dashboard');
+          final prefs = await SharedPreferences.getInstance();
+          final isSetup = prefs.getBool('isGymSetup') ?? false;
+          if (!isSetup) {
+            context.go('/gym-setup');
+          } else {
+            context.go('/dashboard');
+          }
         }
       }
     } on SuspensionException catch (e) {
@@ -221,10 +227,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', data['token']);
         
-        ref.read(userProvider.notifier).refresh();
+        await ref.read(userProvider.notifier).refresh();
 
         if (mounted) {
-          if (data['isNewUser'] == true) {
+          final prefs = await SharedPreferences.getInstance();
+          final isSetup = prefs.getBool('isGymSetup') ?? false;
+          if (!isSetup) {
             context.go('/gym-setup');
           } else {
             context.go('/dashboard');
@@ -424,6 +432,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   constraints: const BoxConstraints(maxWidth: 400),
                   child: Container(
                     padding: const EdgeInsets.all(32),
+                    margin: !isDesktop ? const EdgeInsets.symmetric(horizontal: 16) : null,
                     decoration: !isDesktop 
                         ? BoxDecoration(
                             color: Colors.white.withOpacity(0.85),

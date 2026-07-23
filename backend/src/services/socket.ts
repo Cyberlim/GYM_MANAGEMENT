@@ -26,6 +26,11 @@ export const initSocket = (server: HttpServer) => {
       console.log(`Socket ${socket.id} joined suspension room ${room}`);
     });
 
+    socket.on('join_superadmin', () => {
+      socket.join('superadmin_room');
+      console.log(`Socket ${socket.id} joined superadmin_room`);
+    });
+
     socket.on('disconnect', () => {
       console.log(`Socket disconnected: ${socket.id}`);
     });

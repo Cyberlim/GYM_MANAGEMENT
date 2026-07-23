@@ -33,4 +33,21 @@ const NotificationSchema: Schema = new Schema(
   { timestamps: true }
 );
 
+NotificationSchema.post('save', function (doc: any) {
+  // A rough heuristic to check if this is a newly created document
+  if (doc.createdAt && doc.updatedAt && doc.createdAt.getTime() === doc.updatedAt.getTime()) {
+    // Dynamically import to avoid circular dependencies
+    import('../services/push.service')
+      .then(({ sendPushNotificationToUser }) => {
+        sendPushNotificationToUser(doc.userId.toString(), {
+          title: doc.title,
+          body: doc.message,
+          url: doc.route,
+          type: doc.type,
+        });
+      })
+      .catch((err) => console.error('Failed to send push notification from hook:', err));
+  }
+});
+
 export default mongoose.model<INotification>('Notification', NotificationSchema);

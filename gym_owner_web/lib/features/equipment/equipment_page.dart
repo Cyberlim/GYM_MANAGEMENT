@@ -250,48 +250,56 @@ class EquipmentPage extends ConsumerWidget {
             // Equipment List
             LayoutBuilder(
               builder: (context, constraints) {
-                final listWidth = constraints.maxWidth > 800 ? constraints.maxWidth : 800.0;
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints.tightFor(
-                      width: listWidth,
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
-                      ),
-                      child: equipmentAsync.when(
-                        loading: () => const Padding(
-                          padding: EdgeInsets.all(32.0),
-                          child: Center(child: CircularProgressIndicator()),
-                        ),
-                        error: (error, stack) => Padding(
-                          padding: const EdgeInsets.all(32.0),
-                          child: Center(child: Text('Error: $error')),
-                        ),
-                        data: (equipment) => equipment.isEmpty
-                            ? const Padding(
-                                padding: EdgeInsets.all(32.0),
-                                child: Center(child: Text('No equipment found.')),
-                              )
-                            : ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: equipment.length,
-                                separatorBuilder: (context, index) => Divider(color: Theme.of(context).dividerColor.withOpacity(0.2), height: 1),
-                                itemBuilder: (context, index) {
-                                  final item = equipment[index];
-                                  final isHighlighted = item.id == highlightId;
-                                  return _EquipmentRow(item: item, isHighlighted: isHighlighted);
-                                },
-                              ),
-                      ),
-                    ),
+                final isMobile = MediaQuery.of(context).size.width < 900;
+                final listWidth = isMobile ? constraints.maxWidth : (constraints.maxWidth > 800 ? constraints.maxWidth : 800.0);
+                
+                Widget content = equipmentAsync.when(
+                  loading: () => const Padding(
+                    padding: EdgeInsets.all(32.0),
+                    child: Center(child: CircularProgressIndicator()),
                   ),
+                  error: (error, stack) => Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Center(child: Text('Error: $error')),
+                  ),
+                  data: (equipment) => equipment.isEmpty
+                      ? const Padding(
+                          padding: EdgeInsets.all(32.0),
+                          child: Center(child: Text('No equipment found.')),
+                        )
+                      : ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: equipment.length,
+                          separatorBuilder: (context, index) => isMobile ? const SizedBox(height: 16) : Divider(color: Theme.of(context).dividerColor.withOpacity(0.2), height: 1),
+                          itemBuilder: (context, index) {
+                            final item = equipment[index];
+                            final isHighlighted = item.id == highlightId;
+                            return _EquipmentRow(item: item, isHighlighted: isHighlighted);
+                          },
+                        ),
                 );
+
+                if (isMobile) {
+                  return content;
+                } else {
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints.tightFor(
+                        width: listWidth,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                        ),
+                        child: content,
+                      ),
+                    ),
+                  );
+                }
               }
             ),
           ],
@@ -479,6 +487,128 @@ class _EquipmentRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statusColor = _getStatusColor(item.status);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isMobile = MediaQuery.of(context).size.width < 900;
+
+    if (isMobile) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Theme.of(context).dividerColor.withOpacity(0.5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(_getTypeIcon(item.equipmentType), color: Theme.of(context).colorScheme.primary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(item.machineName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(LucideIcons.mapPin, size: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              item.location,
+                              style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5), fontSize: 12),
+                              maxLines: 1, overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  icon: Icon(LucideIcons.moreVertical, size: 20, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      _showAddEquipmentDialog(context, ref, item);
+                    } else if (value == 'delete') {
+                      ref.read(equipmentProvider.notifier).removeEquipment(item.id);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    const PopupMenuItem(
+                      value: 'edit',
+                      child: Row(
+                        children: [
+                          Icon(LucideIcons.edit2, size: 16),
+                          SizedBox(width: 8),
+                          Text('Edit'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'delete',
+                      child: Row(
+                        children: [
+                          Icon(LucideIcons.trash2, size: 16, color: Colors.red),
+                          SizedBox(width: 8),
+                          Text('Delete', style: TextStyle(color: Colors.red)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Type', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const SizedBox(height: 4),
+                    Text(item.equipmentType, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Brand', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const SizedBox(height: 4),
+                    Text(item.brand, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isDark ? statusColor.withOpacity(0.2) : statusColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: isDark ? Border.all(color: statusColor.withOpacity(0.5)) : null,
+                  ),
+                  child: Text(
+                    item.status,
+                    style: TextStyle(
+                      color: isDark ? statusColor.shade300 : statusColor.shade700,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
       color: isHighlighted ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : Colors.transparent,

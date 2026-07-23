@@ -10,6 +10,8 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:gym_owner_web/core/providers/user_provider.dart';
+import 'package:gym_owner_web/data/api/api_service.dart';
+import 'package:gym_owner_web/features/members/providers/members_provider.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -522,6 +524,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       var response = await request.send();
                       
                       if (response.statusCode == 200) {
+                        if (tempUrl.startsWith('http') && !tempUrl.contains('unsplash.com')) {
+                          try {
+                            await ref.read(apiServiceProvider).deleteFile(tempUrl);
+                          } catch (e) {
+                            debugPrint('Failed to delete old avatar from cloud: $e');
+                          }
+                        }
+                        
                         ref.read(userProvider.notifier).refresh();
                         if (context.mounted) {
                           Navigator.pop(context);

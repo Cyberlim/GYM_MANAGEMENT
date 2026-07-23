@@ -8,6 +8,7 @@ import 'package:gym_owner_web/shared/widgets/hover_zoom_effect.dart';
 import 'package:intl/intl.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MembersPage extends ConsumerStatefulWidget {
   const MembersPage({super.key});
@@ -29,7 +30,9 @@ class _MembersPageState extends ConsumerState<MembersPage> {
   Widget build(BuildContext context) {
     final ref = this.ref;
     final membersAsync = ref.watch(filteredMembersProvider);
-    final isListView = ref.watch(isMemberListViewProvider);
+    final isListViewSetting = ref.watch(isMemberListViewProvider);
+    final isMobile = MediaQuery.of(context).size.width < 900;
+    final isListView = isMobile ? false : isListViewSetting;
     final highlightId = GoRouterState.of(context).uri.queryParameters['highlightId'];
     final action = GoRouterState.of(context).uri.queryParameters['action'];
 
@@ -45,7 +48,23 @@ class _MembersPageState extends ConsumerState<MembersPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(context, ref, isListView),
+          Text(
+            'Members',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Manage your gym members',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+            ),
+          ),
+          const SizedBox(height: 24),
+          _buildHeader(context, ref, isListViewSetting, isMobile),
           const SizedBox(height: 24),
           Expanded(
             child: membersAsync.when(
@@ -117,11 +136,11 @@ class _MembersPageState extends ConsumerState<MembersPage> {
     );
   }
 
-  Widget _buildHeader(BuildContext context, WidgetRef ref, bool isListView) {
+  Widget _buildHeader(BuildContext context, WidgetRef ref, bool isListView, bool isMobile) {
     final statusFilter = ref.watch(filterStatusProvider);
-    final isMobile = MediaQuery.of(context).size.width < 900;
 
     final searchField = TextField(
+      autofocus: isMobile,
       controller: _searchController,
       onChanged: (value) => ref.read(searchQueryProvider.notifier).updateQuery(value),
       style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
@@ -222,38 +241,42 @@ class _MembersPageState extends ConsumerState<MembersPage> {
           runSpacing: 16,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Container(
+            if (!isMobile)
+              Container(
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Theme.of(context).dividerColor),
+                ),
+                child: ToggleButtons(
+                  isSelected: [isListView, !isListView],
+                  onPressed: (index) {
+                    ref.read(isMemberListViewProvider.notifier).setMode(index == 0);
+                  },
+                  borderRadius: BorderRadius.circular(11),
+                  fillColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  selectedColor: Theme.of(context).colorScheme.primary,
+                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                  constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
+                  children: const [
+                    Icon(LucideIcons.list, size: 20),
+                    Icon(LucideIcons.layoutGrid, size: 20),
+                  ],
+                ),
+              ),
+            SizedBox(
               height: 48,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Theme.of(context).dividerColor),
-              ),
-              child: ToggleButtons(
-                isSelected: [isListView, !isListView],
-                onPressed: (index) {
-                  ref.read(isMemberListViewProvider.notifier).setMode(index == 0);
-                },
-                borderRadius: BorderRadius.circular(11),
-                fillColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                selectedColor: Theme.of(context).colorScheme.primary,
-                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
-                children: const [
-                  Icon(LucideIcons.list, size: 20),
-                  Icon(LucideIcons.layoutGrid, size: 20),
-                ],
-              ),
-            ),
-            ElevatedButton.icon(
-              onPressed: () => showAddMemberDialog(context, ref),
-              icon: const Icon(LucideIcons.plus, size: 18),
-              label: const Text('Add Member'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: ElevatedButton.icon(
+                onPressed: () => showAddMemberDialog(context, ref),
+                icon: const Icon(LucideIcons.plus, size: 18),
+                label: const Text('Add Member'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.primary,
+                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
               ),
             ),
           ],
@@ -299,12 +322,14 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
     String selectedStatus = memberToEdit?.status ?? 'Active';
     DateTime selectedJoinDate = memberToEdit?.joinDate ?? DateTime.now();
     DateTime selectedExpiryDate = memberToEdit?.expiryDate ?? DateTime.now().add(const Duration(days: 30));
+    DateTime? selectedDob = memberToEdit?.dob;
     String? selectedTrainerId = memberToEdit?.trainerId;
     String? imageUrl = memberToEdit?.imageUrl;
     String? documentUrl = memberToEdit?.documentUrl;
     XFile? newImageFile;
     XFile? newDocumentFile;
     bool isUploading = false;
+    bool isUploadingDoc = false;
     final TransformationController transformController = TransformationController();
     final TransformationController docTransformController = TransformationController();
     final ImagePicker picker = ImagePicker();
@@ -427,14 +452,34 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                         ),
                       ),
-                      TextFormField(
-                        controller: addressController,
-                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
-                        decoration: InputDecoration(
-                          labelText: 'Address',
-                          prefixIcon: const Icon(LucideIcons.mapPin),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      InkWell(
+                        onTap: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDob ?? DateTime.now(),
+                            firstDate: DateTime(1900),
+                            lastDate: DateTime.now(),
+                          );
+                          if (date != null) setState(() => selectedDob = date);
+                        },
+                        child: InputDecorator(
+                          decoration: InputDecoration(
+                            labelText: 'Date of Birth (Optional)',
+                            prefixIcon: const Icon(LucideIcons.calendarDays),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          child: Text(selectedDob != null ? '${selectedDob!.year}-${selectedDob!.month.toString().padLeft(2, '0')}-${selectedDob!.day.toString().padLeft(2, '0')}' : 'Select Date', maxLines: 1, overflow: TextOverflow.ellipsis),
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: addressController,
+                      style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                      decoration: InputDecoration(
+                        labelText: 'Address',
+                        prefixIcon: const Icon(LucideIcons.mapPin),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -534,66 +579,127 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('Upload Aadhar / ID Document', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    // ID Document Uploader
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('ID Document', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                        TextButton.icon(
+                          onPressed: () async {
+                            final XFile? doc = await picker.pickImage(source: ImageSource.gallery);
+                            if (doc != null) {
+                              setState(() => isUploadingDoc = true);
+                              try {
+                                setState(() {
+                                  newDocumentFile = doc;
+                                  documentUrl = doc.path;
+                                  docTransformController.value = Matrix4.identity();
+                                });
+                              } finally {
+                                setState(() => isUploadingDoc = false);
+                              }
+                            }
+                          },
+                          icon: isUploadingDoc 
+                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                              : Icon(LucideIcons.upload, size: 16, color: Theme.of(context).colorScheme.primary),
+                          label: Text(isUploadingDoc ? 'Uploading...' : 'Upload', style: TextStyle(color: Theme.of(context).colorScheme.primary)),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
-                    // ID Document Picker
-                    GestureDetector(
-                      onTap: () async {
-                        final XFile? docImage = await picker.pickImage(source: ImageSource.gallery);
-                        if (docImage != null) {
-                          setState(() {
-                            newDocumentFile = docImage;
-                            documentUrl = docImage.path;
-                            docTransformController.value = Matrix4.identity();
-                          });
-                        }
-                      },
-                      child: Container(
+                    if (documentUrl == null)
+                      Container(
                         width: double.infinity,
-                        height: 120,
+                        padding: const EdgeInsets.symmetric(vertical: 24),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary.withOpacity(0.05),
+                          color: Theme.of(context).colorScheme.surface,
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
+                          border: Border.all(color: Theme.of(context).dividerColor, style: BorderStyle.solid),
                         ),
-                        child: documentUrl == null
-                            ? Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(LucideIcons.fileText, size: 32, color: Theme.of(context).colorScheme.primary),
-                                  const SizedBox(height: 8),
-                                  Text('Click to select file', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 12)),
-                                ],
+                        child: Center(
+                          child: Text('No document uploaded', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+                        ),
+                      )
+                    else
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Theme.of(context).dividerColor),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  documentUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) => const Center(child: Icon(LucideIcons.imageOff)),
+                                ),
                               )
-                            : Stack(
-                                children: [
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(12),
-                                    child: InteractiveViewer(
-                                      transformationController: docTransformController,
-                                      panEnabled: true,
-                                      scaleEnabled: true,
-                                      minScale: 0.5,
-                                      maxScale: 4.0,
-                                      child: SizedBox(
-                                        width: double.infinity,
-                                        height: 120,
-                                        child: Image.network(
-                                          documentUrl!,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (context, error, stackTrace) =>
-                                              Center(child: Icon(LucideIcons.imageOff, color: Theme.of(context).colorScheme.error)),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text('ID Document', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                            ),
+                            IconButton(
+                              icon: const Icon(LucideIcons.eye, size: 18),
+                              tooltip: 'View',
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => Dialog(
+                                    backgroundColor: Colors.transparent,
+                                    insetPadding: EdgeInsets.zero,
+                                    child: Stack(
+                                      alignment: Alignment.center,
+                                      children: [
+                                        InteractiveViewer(
+                                          minScale: 1.0, maxScale: 5.0,
+                                          child: Image.network(documentUrl!, fit: BoxFit.contain),
                                         ),
-                                      ),
+                                        Positioned(
+                                          top: 16, right: 16,
+                                          child: IconButton(
+                                            icon: const Icon(LucideIcons.x, color: Colors.white, size: 30),
+                                            onPressed: () => Navigator.pop(context),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ],
+                                );
+                              },
+                            ),
+                            if (newDocumentFile == null && documentUrl!.startsWith('http'))
+                              IconButton(
+                                icon: const Icon(LucideIcons.download, size: 18),
+                                tooltip: 'Download',
+                                onPressed: () async {
+                                  final url = Uri.parse(documentUrl!);
+                                  if (await canLaunchUrl(url)) {
+                                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                                  }
+                                },
                               ),
+                            IconButton(
+                              icon: const Icon(LucideIcons.trash2, size: 18, color: Colors.red),
+                              tooltip: 'Remove',
+                              onPressed: () => setState(() {
+                                documentUrl = null;
+                                newDocumentFile = null;
+                              }),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
                   ],
                 );
                 },
@@ -619,13 +725,25 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                         if (newImageFile != null) {
                           final bytes = await newImageFile!.readAsBytes();
                           final uploadedUrl = await api.uploadFile(bytes, newImageFile!.name);
-                          if (uploadedUrl != null) imageUrl = uploadedUrl;
+                          if (uploadedUrl != null) {
+                            // Delete old image if updating
+                            if (memberToEdit != null && memberToEdit.imageUrl != null && memberToEdit.imageUrl!.startsWith('http') && !memberToEdit.imageUrl!.contains('unsplash.com')) {
+                              try { await api.deleteFile(memberToEdit.imageUrl!); } catch (e) { debugPrint('Failed to delete old image: $e'); }
+                            }
+                            imageUrl = uploadedUrl;
+                          }
                         }
                         
                         if (newDocumentFile != null) {
                           final bytes = await newDocumentFile!.readAsBytes();
                           final uploadedUrl = await api.uploadFile(bytes, newDocumentFile!.name);
-                          if (uploadedUrl != null) documentUrl = uploadedUrl;
+                          if (uploadedUrl != null) {
+                            // Delete old document if updating
+                            if (memberToEdit != null && memberToEdit.documentUrl != null && memberToEdit.documentUrl!.startsWith('http')) {
+                              try { await api.deleteFile(memberToEdit.documentUrl!); } catch (e) { debugPrint('Failed to delete old document: $e'); }
+                            }
+                            documentUrl = uploadedUrl;
+                          }
                         }
                         
                         final newMember = Member(
@@ -639,6 +757,7 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                           expiryDate: selectedExpiryDate,
                           totalCheckIns: memberToEdit?.totalCheckIns ?? 0,
                           imageUrl: imageUrl,
+                          dob: selectedDob,
                           address: addressController.text,
                           documentUrl: documentUrl,
                           trainerId: selectedTrainerId,
@@ -684,168 +803,314 @@ void showMemberDetailsDialog(BuildContext context, WidgetRef ref, Member member)
   showDialog(
     context: context,
     builder: (context) {
-      final transformController = TransformationController();
-      return AlertDialog(
+      return Dialog(
         backgroundColor: Theme.of(context).colorScheme.surface,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Member Details', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
-            IconButton(
-              icon: Icon(LucideIcons.pencil, size: 20, color: Theme.of(context).colorScheme.primary),
-              onPressed: () {
-                Navigator.pop(context);
-                showAddMemberDialog(context, ref, memberToEdit: member);
-              },
-            ),
-          ],
-        ),
-        content: SizedBox(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Container(
           width: 500,
+          padding: const EdgeInsets.all(32),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              Center(
-                child: GestureDetector(
+                // Header with edit icon
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Member Details', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                    IconButton(
+                      icon: const Icon(LucideIcons.edit3, size: 20),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        showAddMemberDialog(context, ref, memberToEdit: member);
+                      },
+                      tooltip: 'Edit Member',
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                // Profile Image
+                GestureDetector(
                   onTap: () => showFullMemberImage(context, member),
                   child: CircleAvatar(
-                    radius: 40,
+                    radius: 50,
                     backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    backgroundImage: member.imageUrl != null ? NetworkImage(member.imageUrl!) : null,
-                    child: member.imageUrl == null
+                    backgroundImage: member.imageUrl != null && member.imageUrl!.isNotEmpty ? NetworkImage(member.imageUrl!) : null,
+                    child: member.imageUrl == null || member.imageUrl!.isEmpty
                         ? Icon(LucideIcons.user, size: 40, color: Theme.of(context).colorScheme.primary)
                         : null,
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              _buildDetailRow(context, 'Name', member.name),
-              _buildDetailRow(context, 'Email', member.email),
-              _buildDetailRow(context, 'Phone', member.phone.isEmpty ? 'N/A' : member.phone),
-              _buildDetailRow(context, 'Address', member.address.isEmpty ? 'N/A' : member.address),
-              _buildDetailRow(
-                context, 
-                'Plan', 
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
-                  ),
-                  child: Text(member.membershipPlan, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 13, fontWeight: FontWeight.bold)),
-                )
-              ),
-              _buildDetailRow(
-                context, 
-                'Status', 
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: member.status.toLowerCase() == 'active' 
-                        ? Colors.green.withOpacity(0.1) 
-                        : member.status.toLowerCase() == 'expired' 
-                            ? Colors.red.withOpacity(0.1) 
-                            : Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: member.status.toLowerCase() == 'active' 
-                          ? Colors.green 
-                          : member.status.toLowerCase() == 'expired' 
-                              ? Colors.red 
-                              : Colors.orange,
-                    ),
-                  ),
-                  child: Text(
-                    member.status, 
-                    style: TextStyle(
-                      color: member.status.toLowerCase() == 'active' 
-                          ? Colors.green 
-                          : member.status.toLowerCase() == 'expired' 
-                              ? Colors.red 
-                              : Colors.orange,
-                      fontSize: 13, 
-                      fontWeight: FontWeight.bold
-                    )
-                  ),
-                )
-              ),
-              Consumer(
-                builder: (context, ref, child) {
-                  final trainers = ref.read(trainersProvider).value ?? [];
-                  final trainerName = member.trainerId != null
-                      ? trainers.firstWhere((t) => t.id == member.trainerId, orElse: () => Trainer(id: '', name: 'Unknown', specialization: '', assignedMembers: 0, rating: 0.0)).name
-                      : 'None';
-                  return _buildDetailRow(context, 'Trainer', trainerName == 'Unknown' && member.trainerId == null ? 'None' : trainerName);
-                }
-              ),
-              _buildDetailRow(context, 'Join Date', DateFormat('MMM d, yyyy').format(member.joinDate)),
-              _buildDetailRow(context, 'Expiry Date', DateFormat('MMM d, yyyy').format(member.expiryDate)),
-              if (member.documentUrl != null && member.documentUrl!.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                Text('ID Document', style: TextStyle(color: Colors.grey, fontSize: 12)),
-                const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  height: 150,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Theme.of(context).dividerColor),
+                Text(member.name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 32),
+                
+                // Info grid
+                Row(
+                  children: [
+                    Expanded(child: _buildMemberInfoItem(context, LucideIcons.mail, 'Email', Text(member.email, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface), maxLines: 2, overflow: TextOverflow.ellipsis))),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildMemberInfoItem(context, LucideIcons.phone, 'Phone', Text(member.phone.isEmpty ? 'N/A' : member.phone, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)))),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(child: _buildMemberInfoItem(
+                      context, 
+                      LucideIcons.calendarDays, 
+                      'Date of Birth', 
+                      Text(member.dob != null ? DateFormat('MMM d, yyyy').format(member.dob!) : 'N/A', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface))
+                    )),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildMemberInfoItem(context, LucideIcons.mapPin, 'Address', Text(member.address.isEmpty ? 'N/A' : member.address, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface), maxLines: 2, overflow: TextOverflow.ellipsis))),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(child: Consumer(
+                      builder: (context, ref, child) {
+                        final trainers = ref.read(trainersProvider).value ?? [];
+                        final trainerName = member.trainerId != null
+                            ? trainers.firstWhere((t) => t.id == member.trainerId, orElse: () => Trainer(id: '', name: 'Unknown', specialization: '', assignedMembers: 0, rating: 0.0)).name
+                            : 'None';
+                        return _buildMemberInfoItem(context, LucideIcons.user, 'Trainer', Text(trainerName == 'Unknown' && member.trainerId == null ? 'None' : trainerName, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)));
+                      }
+                    )),
+                    const SizedBox(width: 16),
+                    const Expanded(child: SizedBox()),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(child: _buildMemberInfoItem(
+                      context, 
+                      LucideIcons.creditCard, 
+                      'Plan', 
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.3)),
+                        ),
+                        child: Text(member.membershipPlan, style: TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 13, fontWeight: FontWeight.bold)),
+                      )
+                    )),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildMemberInfoItem(
+                      context, 
+                      LucideIcons.activity, 
+                      'Status', 
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: member.status.toLowerCase() == 'active' 
+                              ? Colors.green.withOpacity(0.1) 
+                              : member.status.toLowerCase() == 'expired' 
+                                  ? Colors.red.withOpacity(0.1) 
+                                  : Colors.orange.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: member.status.toLowerCase() == 'active' 
+                                ? Colors.green 
+                                : member.status.toLowerCase() == 'expired' 
+                                    ? Colors.red 
+                                    : Colors.orange,
+                          ),
+                        ),
+                        child: Text(
+                          member.status, 
+                          style: TextStyle(
+                            color: member.status.toLowerCase() == 'active' 
+                                ? Colors.green 
+                                : member.status.toLowerCase() == 'expired' 
+                                    ? Colors.red 
+                                    : Colors.orange,
+                            fontSize: 13, 
+                            fontWeight: FontWeight.bold
+                          )
+                        ),
+                      )
+                    )),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(child: _buildMemberInfoItem(context, LucideIcons.calendar, 'Join Date', Text(DateFormat('MMM d, yyyy').format(member.joinDate), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)))),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildMemberInfoItem(context, LucideIcons.calendarClock, 'Expiry Date', Text(DateFormat('MMM d, yyyy').format(member.expiryDate), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)))),
+                  ],
+                ),
+                if (member.documentUrl != null && member.documentUrl!.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('ID Document', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
                   ),
-                  child: InkWell(
-                    onTap: () => showMemberDetailsDialog(context, ref, member),
-                    borderRadius: BorderRadius.circular(16),
-                    child: InteractiveViewer(
-                      transformationController: transformController,
-                      panEnabled: true,
-                      scaleEnabled: true,
-                      child: Image.network(
-                        member.documentUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            Center(child: Icon(LucideIcons.imageOff, color: Theme.of(context).colorScheme.error)),
-                      ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              member.documentUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => const Center(child: Icon(LucideIcons.imageOff)),
+                            ),
+                          )
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text('ID Document', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                        ),
+                        IconButton(
+                          icon: const Icon(LucideIcons.eye, size: 18),
+                          tooltip: 'View',
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => Dialog(
+                                backgroundColor: Colors.transparent,
+                                insetPadding: EdgeInsets.zero,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    InteractiveViewer(
+                                      minScale: 1.0, maxScale: 5.0,
+                                      child: Image.network(member.documentUrl!, fit: BoxFit.contain),
+                                    ),
+                                    Positioned(
+                                      top: 16, right: 16,
+                                      child: IconButton(
+                                        icon: const Icon(LucideIcons.x, color: Colors.white, size: 30),
+                                        onPressed: () => Navigator.pop(context),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                        if (member.documentUrl!.startsWith('http'))
+                          IconButton(
+                            icon: const Icon(LucideIcons.download, size: 18),
+                            tooltip: 'Download',
+                            onPressed: () async {
+                              final url = Uri.parse(member.documentUrl!);
+                              if (await canLaunchUrl(url)) {
+                                await launchUrl(url, mode: LaunchMode.externalApplication);
+                              }
+                            },
+                          ),
+                        IconButton(
+                          icon: const Icon(LucideIcons.trash2, size: 18, color: Colors.red),
+                          tooltip: 'Remove',
+                          onPressed: () {
+                            showDialog(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                backgroundColor: Theme.of(context).colorScheme.surface,
+                                title: const Text('Remove ID Document?'),
+                                content: const Text('Are you sure you want to remove this ID document?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx),
+                                    child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                                  ),
+                                  TextButton(
+                                    onPressed: () async {
+                                      try {
+                                        await ref.read(apiServiceProvider).deleteFile(member.documentUrl!);
+                                      } catch (e) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text('Warning: Failed to delete file from cloud: $e'), backgroundColor: Colors.orange),
+                                          );
+                                        }
+                                      }
+
+                                      final updatedMember = Member(
+                                        id: member.id,
+                                        name: member.name,
+                                        email: member.email,
+                                        phone: member.phone,
+                                        membershipPlan: member.membershipPlan,
+                                        status: member.status,
+                                        joinDate: member.joinDate,
+                                        expiryDate: member.expiryDate,
+                                        totalCheckIns: member.totalCheckIns,
+                                        imageUrl: member.imageUrl,
+                                        address: member.address,
+                                        trainerId: member.trainerId,
+                                        documentUrl: '', // Clear the document
+                                      );
+                                      ref.read(membersProvider.notifier).updateMember(updatedMember);
+                                      if (context.mounted) {
+                                        Navigator.pop(ctx);
+                                        Navigator.pop(context);
+                                      }
+                                    },
+                                    child: const Text('Remove', style: TextStyle(color: Colors.red)),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ]
-            ],
+                ],
+              ],
+            ),
           ),
         ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text('Close', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
-          ),
-        ],
       );
     },
   );
 }
 
-Widget _buildDetailRow(BuildContext context, String label, dynamic value) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 12.0),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SizedBox(
-          width: 100,
-          child: Text(label, style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.bold)),
+Widget _buildMemberInfoItem(BuildContext context, IconData icon, String label, Widget valueWidget) {
+  return Row(
+    children: [
+      Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
         ),
-        Expanded(
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: value is Widget 
-                ? value 
-                : Text(value.toString(), style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontSize: 14)),
-          ),
+        child: Icon(icon, size: 16, color: Theme.of(context).colorScheme.primary),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: TextStyle(fontSize: 12, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5))),
+            valueWidget,
+          ],
         ),
-      ],
-    ),
+      ),
+    ],
   );
 }
 
@@ -873,8 +1138,8 @@ class _MemberRow extends ConsumerWidget {
                 child: CircleAvatar(
                   radius: 18,
                   backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                  backgroundImage: member.imageUrl != null ? NetworkImage(member.imageUrl!) : null,
-                  child: member.imageUrl == null
+                  backgroundImage: member.imageUrl != null && member.imageUrl!.isNotEmpty ? NetworkImage(member.imageUrl!) : null,
+                  child: member.imageUrl == null || member.imageUrl!.isEmpty
                       ? Text(
                           member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
                           style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
@@ -1086,8 +1351,8 @@ class _MemberCard extends ConsumerWidget {
                           child: CircleAvatar(
                             radius: 36,
                             backgroundColor: planColor.withOpacity(0.1),
-                            backgroundImage: member.imageUrl != null ? NetworkImage(member.imageUrl!) : null,
-                            child: member.imageUrl == null
+                            backgroundImage: member.imageUrl != null && member.imageUrl!.isNotEmpty ? NetworkImage(member.imageUrl!) : null,
+                            child: member.imageUrl == null || member.imageUrl!.isEmpty
                                 ? Text(
                                     member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
                                     style: TextStyle(color: planColor, fontSize: 28, fontWeight: FontWeight.bold),
@@ -1206,8 +1471,8 @@ void showFullMemberImage(BuildContext context, Member member) {
             child: CircleAvatar(
               radius: 140,
               backgroundColor: Theme.of(context).colorScheme.primary,
-              backgroundImage: member.imageUrl != null ? NetworkImage(member.imageUrl!) : null,
-              child: member.imageUrl == null
+              backgroundImage: member.imageUrl != null && member.imageUrl!.isNotEmpty ? NetworkImage(member.imageUrl!) : null,
+              child: member.imageUrl == null || member.imageUrl!.isEmpty
                   ? Text(
                       member.name.isNotEmpty ? member.name[0].toUpperCase() : '?',
                       style: TextStyle(color: Theme.of(context).colorScheme.onPrimary, fontSize: 100, fontWeight: FontWeight.bold),

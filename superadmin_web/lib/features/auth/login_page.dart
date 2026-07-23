@@ -296,6 +296,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: Container(
                     width: 440,
                     padding: const EdgeInsets.all(48),
+                    margin: !isDesktop ? const EdgeInsets.symmetric(horizontal: 16) : null,
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surface.withOpacity(isDesktop ? 1.0 : 0.75),
                       borderRadius: BorderRadius.circular(24),
