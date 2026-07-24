@@ -11,6 +11,33 @@ import 'package:intl/intl.dart';
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
+  void _showFullScreenAvatar(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => GestureDetector(
+        onTap: () => Navigator.of(context).pop(),
+        child: Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: EdgeInsets.zero,
+          child: InteractiveViewer(
+            panEnabled: true,
+            minScale: 1.0,
+            maxScale: 4.0,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                width: double.infinity,
+                height: double.infinity,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider).user;
@@ -25,6 +52,11 @@ class HomeScreen extends ConsumerWidget {
     final daysLeft = expiryDate != null ? expiryDate.difference(DateTime.now()).inDays : 0;
     final isExpired = expiryDate != null && expiryDate.isBefore(DateTime.now());
     final planName = user?['membershipPlan'] ?? 'No Plan';
+
+    final trainer = user?['trainerId'];
+    final trainerName = trainer != null && trainer is Map ? trainer['name'] : null;
+    final trainerSpecialty = trainer != null && trainer is Map ? trainer['specialization'] : 'Personal Trainer';
+    final trainerImage = trainer != null && trainer is Map ? trainer['imageUrl'] : null;
 
     return Scaffold(
       body: SafeArea(
@@ -145,6 +177,73 @@ class HomeScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+
+              if (trainerName != null) ...[
+                const SizedBox(height: 24),
+                // Premium Trainer Card
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF2C3E50), Color(0xFF3498DB)], // Sleek dark blue gradient
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF3498DB).withOpacity(0.3),
+                        blurRadius: 15,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          if (trainerImage != null && trainerImage.isNotEmpty) {
+                            _showFullScreenAvatar(context, trainerImage);
+                          }
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(3),
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: LinearGradient(
+                              colors: [Color(0xFF00F2FE), Color(0xFF4FACFE)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                          ),
+                          child: CircleAvatar(
+                            radius: 32,
+                            backgroundColor: Colors.white,
+                            backgroundImage: trainerImage != null && trainerImage.isNotEmpty ? NetworkImage(trainerImage) : null,
+                            child: (trainerImage == null || trainerImage.isEmpty)
+                                ? const Icon(LucideIcons.user, color: Colors.grey, size: 30)
+                                : null,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('YOUR PERSONAL TRAINER', style: TextStyle(color: Colors.white70, fontSize: 11, letterSpacing: 1.5, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 6),
+                            Text(trainerName, style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 2),
+                            Text(trainerSpecialty ?? 'Fitness Coach', style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+
               const SizedBox(height: 32),
 
               // Quick Overview
@@ -207,6 +306,11 @@ class HomeScreen extends ConsumerWidget {
                     }
                   }
 
+                  final recentRecordsForDisplay = recordsList.where((record) {
+                    final date = DateTime.parse(record['date']);
+                    return DateTime.now().difference(date).inDays <= 2;
+                  }).toList();
+
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -222,10 +326,10 @@ class HomeScreen extends ConsumerWidget {
                       const SizedBox(height: 32),
                       const Text('Recent Check-ins', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 16),
-                      if (recordsList.isEmpty)
-                        const Text('No recent check-ins yet.')
+                      if (recentRecordsForDisplay.isEmpty)
+                        const Text('No recent check-ins in the last 2 days.')
                       else
-                        ...recordsList.take(3).map((record) {
+                        ...recentRecordsForDisplay.take(3).map((record) {
                           final date = DateTime.parse(record['date']);
                           final isPresent = record['status'] == 'Present';
                           final displayTime = isPresent && record['checkInTime'] != null

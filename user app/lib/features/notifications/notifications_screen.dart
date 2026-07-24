@@ -59,17 +59,30 @@ class NotificationsScreen extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(LucideIcons.bellRing, size: 64, color: theme.colorScheme.onSurface.withOpacity(0.2)),
+                  Icon(LucideIcons.bellRing, size: 64, color: theme.colorScheme.onSurface.withValues(alpha: 0.2)),
                   const SizedBox(height: 16),
-                  Text('No notifications yet', style: TextStyle(color: theme.colorScheme.onSurface.withOpacity(0.5))),
+                  Text('No notifications yet', style: TextStyle(color: theme.colorScheme.onSurface.withValues(alpha: 0.5))),
                 ],
               ),
             );
           }
 
-          return ListView.builder(
-            itemCount: notifications.length,
-            itemBuilder: (context, index) {
+          return Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                width: double.infinity,
+                color: Colors.orange.withValues(alpha: 0.1),
+                child: const Text(
+                  'Note: Notifications are automatically deleted after 2 days.',
+                  style: TextStyle(color: Colors.orange, fontSize: 12),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: notifications.length,
+                  itemBuilder: (context, index) {
               final notification = notifications[index];
               final isRead = notification['isRead'] == true;
               final type = notification['type'] ?? 'system';
@@ -98,12 +111,12 @@ class NotificationsScreen extends ConsumerWidget {
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isRead ? theme.colorScheme.surface : theme.colorScheme.primary.withOpacity(0.05),
+                  color: isRead ? theme.colorScheme.surface : theme.colorScheme.primary.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isRead 
-                      ? theme.colorScheme.onSurface.withOpacity(0.05)
-                      : theme.colorScheme.primary.withOpacity(0.2),
+                      ? theme.colorScheme.onSurface.withValues(alpha: 0.05)
+                      : theme.colorScheme.primary.withValues(alpha: 0.2),
                   ),
                 ),
                 child: ListTile(
@@ -111,7 +124,7 @@ class NotificationsScreen extends ConsumerWidget {
                   leading: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: iconColor.withOpacity(0.1),
+                      color: iconColor.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(icon, color: iconColor, size: 24),
@@ -180,9 +193,12 @@ class NotificationsScreen extends ConsumerWidget {
                 ),
               );
             },
-          );
-        },
-      ),
+          ),
+        ),
+      ],
+    );
+  },
+),
     );
   }
 }

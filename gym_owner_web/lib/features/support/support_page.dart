@@ -37,12 +37,15 @@ class _SupportPageState extends ConsumerState<SupportPage> {
               const SizedBox(height: 24),
               // Tabs
               Container(
-                decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TabBar(
-                  indicatorColor: Theme.of(context).colorScheme.primary,
-                  labelColor: Theme.of(context).colorScheme.primary,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  indicator: BoxDecoration(
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  dividerColor: Colors.transparent,
+                  labelColor: Theme.of(context).colorScheme.onSurface,
                   unselectedLabelColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                   tabs: const [
                     Tab(

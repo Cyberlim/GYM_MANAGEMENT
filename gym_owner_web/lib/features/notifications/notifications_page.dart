@@ -59,6 +59,22 @@ class NotificationsPage extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 32),
+            Container(
+              padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.orange.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange.withOpacity(0.5)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(LucideIcons.info, color: Colors.orange, size: 16),
+                  SizedBox(width: 8),
+                  Text('Note: Notifications are automatically deleted after 2 days.', style: TextStyle(color: Colors.orange, fontSize: 13)),
+                ],
+              ),
+            ),
             if (notifications.isEmpty)
               const Center(
                 child: Padding(

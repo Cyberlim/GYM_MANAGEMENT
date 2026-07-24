@@ -207,6 +207,11 @@ export const getGymDetails = async (req: AuthRequest, res: Response): Promise<vo
     if (!checkSuperadmin(req, res)) return;
     const { id } = req.params;
 
+    if (!mongoose.Types.ObjectId.isValid(id as string)) {
+      res.status(400).json({ message: 'Invalid Gym ID' });
+      return;
+    }
+
     const gym = await Gym.findById(id).populate('ownerId', 'name email phone createdAt status');
     if (!gym) {
       res.status(404).json({ message: 'Gym not found' });
@@ -217,9 +222,9 @@ export const getGymDetails = async (req: AuthRequest, res: Response): Promise<vo
     
     // Fetch related data
     const objectId = new mongoose.Types.ObjectId(id as string);
-    const members = await Member.find({ gymId: objectId }).select('name membershipPlan status joinDate expiryDate email createdAt').lean();
-    const trainers = await Trainer.find({ gymId: objectId }).select('name specialization email status createdAt').lean();
-    const staff = await Staff.find({ gymId: objectId }).select('name role email status createdAt').lean();
+    const members = await Member.find({ gymId: objectId }).select('name membershipPlan status joinDate expiryDate email createdAt imageUrl').lean();
+    const trainers = await Trainer.find({ gymId: objectId }).select('name specialization email status createdAt imageUrl').lean();
+    const staff = await Staff.find({ gymId: objectId }).select('name role email status createdAt imageUrl').lean();
     const payments = await Payment.find({ gymId: objectId }).sort({ date: -1 }).limit(5).lean();
 
     // Aggregate recent activity
@@ -282,21 +287,24 @@ export const getGymDetails = async (req: AuthRequest, res: Response): Promise<vo
         name: m.name,
         plan: m.membershipPlan || 'Basic',
         date: m.joinDate ? new Date(m.joinDate).toLocaleDateString() : 'Unknown',
-        status: m.status || 'Active'
+        status: m.status || 'Active',
+        imageUrl: m.imageUrl
       })),
       trainers: trainers.map(t => ({
         id: t._id,
         name: t.name,
         role: t.specialization || 'Trainer',
         email: t.email || 'N/A',
-        status: (t as any).status || 'Active'
+        status: (t as any).status || 'Active',
+        imageUrl: t.imageUrl
       })),
       staff: staff.map(s => ({
         id: s._id,
         name: s.name,
         role: s.role || 'Staff',
         email: s.email || 'N/A',
-        status: (s as any).status || 'Active'
+        status: (s as any).status || 'Active',
+        imageUrl: s.imageUrl
       })),
       recentActivity: recentActivity.slice(0, 10).map(a => ({
         ...a,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// ignore: avoid_web_libraries_in_flutter, uri_does_not_exist
+import 'dart:js_util' as js_util;
 import '../../core/theme/app_theme.dart';
 import '../../data/providers/superadmin_provider.dart';
 
@@ -30,7 +32,7 @@ class PersonDetailsPage extends ConsumerWidget {
       data: (person) {
         final isStaff = role != 'Member';
         final status = person['status'] ?? 'Active';
-        final statusBg = status == 'Active' ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1);
+        final statusBg = status == 'Active' ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1);
         final statusText = status == 'Active' ? Colors.green : Colors.red;
         
         final name = person['name'] ?? fallbackName;
@@ -110,7 +112,7 @@ class PersonDetailsPage extends ConsumerWidget {
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                           border: Border.all(color: AppTheme.primaryColor, width: 3),
                         ),
@@ -198,47 +200,111 @@ class PersonDetailsPage extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    if (person['documentUrl'] != null && person['documentUrl'].toString().isNotEmpty) ...[
-                      const SizedBox(height: 24),
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(color: Theme.of(context).shadowColor.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('ID Document', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                            const SizedBox(height: 24),
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(color: Theme.of(context).shadowColor.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('ID Document', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                          const SizedBox(height: 24),
+                          if (person['documentUrl'] != null && person['documentUrl'].toString().isNotEmpty)
                             Container(
-                              width: double.infinity,
-                              height: 200,
+                              padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: Theme.of(context).dividerColor),
                               ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(12),
-                                child: InteractiveViewer(
-                                  panEnabled: true,
-                                  scaleEnabled: true,
-                                  child: Image.network(
-                                    person['documentUrl'],
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) =>
-                                        Center(child: Icon(LucideIcons.imageOff, color: Theme.of(context).colorScheme.error)),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 60,
+                                    height: 60,
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Icon(LucideIcons.fileText, color: Theme.of(context).colorScheme.primary, size: 28),
                                   ),
-                                ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text('ID Document', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(LucideIcons.eye, size: 18),
+                                    tooltip: 'View',
+                                    onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => Dialog(
+                                          backgroundColor: Colors.transparent,
+                                          insetPadding: EdgeInsets.zero,
+                                          child: Stack(
+                                            alignment: Alignment.center,
+                                            children: [
+                                              InteractiveViewer(
+                                                minScale: 1.0, maxScale: 5.0,
+                                                child: Image.network(
+                                                  person['documentUrl'],
+                                                  fit: BoxFit.contain,
+                                                  errorBuilder: (context, error, stackTrace) =>
+                                                      const Center(child: Text('Image not available', style: TextStyle(color: Colors.white, fontSize: 16))),
+                                                ),
+                                              ),
+                                              Positioned(
+                                                top: 16, right: 16,
+                                                child: IconButton(
+                                                  icon: const Icon(LucideIcons.x, color: Colors.white, size: 30),
+                                                  onPressed: () => Navigator.pop(context),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(LucideIcons.download, size: 18),
+                                    tooltip: 'Download',
+                                    onPressed: () {
+                                      String downloadUrl = person['documentUrl'];
+                                      if (downloadUrl.contains('/upload/')) {
+                                        downloadUrl = downloadUrl.replaceFirst('/upload/', '/upload/fl_attachment/');
+                                      }
+                                      js_util.callMethod(js_util.globalThis, 'open', [downloadUrl, '_blank']);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.5),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Theme.of(context).dividerColor),
+                              ),
+                              child: Column(
+                                children: [
+                                  Icon(LucideIcons.fileQuestion, size: 32, color: Colors.grey),
+                                  const SizedBox(height: 12),
+                                  const Text('ID Document not uploaded', style: TextStyle(color: Colors.grey)),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
+                        ],
                       ),
-                    ]
+                    ),
                   ],
                 ),
               ),
@@ -309,7 +375,7 @@ class PersonDetailsPage extends ConsumerWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: AppTheme.primaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(color: AppTheme.primaryColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
             child: Icon(icon, color: AppTheme.primaryColor, size: 16),
           ),
           const SizedBox(width: 16),

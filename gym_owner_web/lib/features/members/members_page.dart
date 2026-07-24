@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:js_util' as js_util;
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:gym_owner_web/features/members/providers/members_provider.dart';
 import 'package:gym_owner_web/features/trainers/providers/trainers_provider.dart';
@@ -681,7 +682,12 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                                       children: [
                                         InteractiveViewer(
                                           minScale: 1.0, maxScale: 5.0,
-                                          child: Image.network(documentUrl!, fit: BoxFit.contain),
+                                          child: Image.network(
+                                            documentUrl!,
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (context, error, stackTrace) =>
+                                                const Center(child: Text('Image not available', style: TextStyle(color: Colors.white, fontSize: 16))),
+                                          ),
                                         ),
                                         Positioned(
                                           top: 16, right: 16,
@@ -700,11 +706,12 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                               IconButton(
                                 icon: const Icon(LucideIcons.download, size: 18),
                                 tooltip: 'Download',
-                                onPressed: () async {
-                                  final url = Uri.parse(documentUrl!);
-                                  if (await canLaunchUrl(url)) {
-                                    await launchUrl(url, mode: LaunchMode.externalApplication);
+                                onPressed: () {
+                                  String downloadUrl = documentUrl!;
+                                  if (downloadUrl.contains('/upload/')) {
+                                    downloadUrl = downloadUrl.replaceFirst('/upload/', '/upload/fl_attachment/');
                                   }
+                                  js_util.callMethod(js_util.globalThis, 'open', [downloadUrl, '_blank']);
                                 },
                               ),
                             IconButton(
@@ -858,6 +865,7 @@ void showMemberDetailsDialog(BuildContext context, WidgetRef ref, Member member)
                     radius: 50,
                     backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                     backgroundImage: member.imageUrl != null && member.imageUrl!.isNotEmpty ? NetworkImage(member.imageUrl!) : null,
+                    onBackgroundImageError: (member.imageUrl != null && member.imageUrl!.isNotEmpty) ? (exception, stackTrace) {} : null,
                     child: member.imageUrl == null || member.imageUrl!.isEmpty
                         ? Icon(LucideIcons.user, size: 40, color: Theme.of(context).colorScheme.primary)
                         : null,
@@ -967,15 +975,15 @@ void showMemberDetailsDialog(BuildContext context, WidgetRef ref, Member member)
                     Expanded(child: _buildMemberInfoItem(context, LucideIcons.calendarClock, 'Expiry Date', Text(DateFormat('MMM d, yyyy').format(member.expiryDate), style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)))),
                   ],
                 ),
-                if (member.documentUrl != null && member.documentUrl!.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  const Divider(),
-                  const SizedBox(height: 16),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text('ID Document', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                  ),
-                  const SizedBox(height: 12),
+                const SizedBox(height: 24),
+                const Divider(),
+                const SizedBox(height: 16),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('ID Document', style: TextStyle(fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                ),
+                const SizedBox(height: 12),
+                if (member.documentUrl != null && member.documentUrl!.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
@@ -988,16 +996,10 @@ void showMemberDetailsDialog(BuildContext context, WidgetRef ref, Member member)
                           width: 60,
                           height: 60,
                           decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              member.documentUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => const Center(child: Icon(LucideIcons.imageOff)),
-                            ),
-                          )
+                          child: Icon(LucideIcons.fileText, color: Theme.of(context).colorScheme.primary, size: 28),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -1017,7 +1019,12 @@ void showMemberDetailsDialog(BuildContext context, WidgetRef ref, Member member)
                                   children: [
                                     InteractiveViewer(
                                       minScale: 1.0, maxScale: 5.0,
-                                      child: Image.network(member.documentUrl!, fit: BoxFit.contain),
+                                      child: Image.network(
+                                        member.documentUrl!,
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            const Center(child: Text('Image not available', style: TextStyle(color: Colors.white, fontSize: 16))),
+                                      ),
                                     ),
                                     Positioned(
                                       top: 16, right: 16,
@@ -1032,76 +1039,37 @@ void showMemberDetailsDialog(BuildContext context, WidgetRef ref, Member member)
                             );
                           },
                         ),
-                        if (member.documentUrl!.startsWith('http'))
-                          IconButton(
-                            icon: const Icon(LucideIcons.download, size: 18),
-                            tooltip: 'Download',
-                            onPressed: () async {
-                              final url = Uri.parse(member.documentUrl!);
-                              if (await canLaunchUrl(url)) {
-                                await launchUrl(url, mode: LaunchMode.externalApplication);
-                              }
-                            },
-                          ),
                         IconButton(
-                          icon: const Icon(LucideIcons.trash2, size: 18, color: Colors.red),
-                          tooltip: 'Remove',
+                          icon: const Icon(LucideIcons.download, size: 18),
+                          tooltip: 'Download',
                           onPressed: () {
-                            showDialog(
-                              context: context,
-                              builder: (ctx) => AlertDialog(
-                                backgroundColor: Theme.of(context).colorScheme.surface,
-                                title: const Text('Remove ID Document?'),
-                                content: const Text('Are you sure you want to remove this ID document?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.pop(ctx),
-                                    child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
-                                  ),
-                                  TextButton(
-                                    onPressed: () async {
-                                      try {
-                                        await ref.read(apiServiceProvider).deleteFile(member.documentUrl!);
-                                      } catch (e) {
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            SnackBar(content: Text('Warning: Failed to delete file from cloud: $e'), backgroundColor: Colors.orange),
-                                          );
-                                        }
-                                      }
-
-                                      final updatedMember = Member(
-                                        id: member.id,
-                                        name: member.name,
-                                        email: member.email,
-                                        phone: member.phone,
-                                        membershipPlan: member.membershipPlan,
-                                        status: member.status,
-                                        joinDate: member.joinDate,
-                                        expiryDate: member.expiryDate,
-                                        totalCheckIns: member.totalCheckIns,
-                                        imageUrl: member.imageUrl,
-                                        address: member.address,
-                                        trainerId: member.trainerId,
-                                        documentUrl: '', // Clear the document
-                                      );
-                                      ref.read(membersProvider.notifier).updateMember(updatedMember);
-                                      if (context.mounted) {
-                                        Navigator.pop(ctx);
-                                        Navigator.pop(context);
-                                      }
-                                    },
-                                    child: const Text('Remove', style: TextStyle(color: Colors.red)),
-                                  ),
-                                ],
-                              ),
-                            );
+                            String downloadUrl = member.documentUrl!;
+                            if (downloadUrl.contains('/upload/')) {
+                              downloadUrl = downloadUrl.replaceFirst('/upload/', '/upload/fl_attachment/');
+                            }
+                            js_util.callMethod(js_util.globalThis, 'open', [downloadUrl, '_blank']);
                           },
                         ),
                       ],
                     ),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(24),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surface.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(LucideIcons.fileQuestion, size: 32, color: Colors.grey),
+                        const SizedBox(height: 12),
+                        const Text('ID Document not uploaded', style: TextStyle(color: Colors.grey)),
+                      ],
+                    ),
                   ),
-                ],
               ],
             ),
           ),

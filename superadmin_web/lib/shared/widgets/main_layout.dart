@@ -812,6 +812,11 @@ class _NotificationDropdown extends ConsumerWidget {
             ),
           ),
           const PopupMenuDivider(),
+          const PopupMenuItem<String>(
+            enabled: false,
+            height: 30,
+            child: Text('Note: Notifications are auto-deleted after 2 days.', style: TextStyle(color: Colors.grey, fontSize: 11, fontStyle: FontStyle.italic)),
+          ),
           ...notifications.map((n) {
             Widget iconWidget;
             switch (n.type) {

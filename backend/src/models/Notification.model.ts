@@ -50,4 +50,7 @@ NotificationSchema.post('save', function (doc: any) {
   }
 });
 
+// TTL Index: Automatically delete notifications 2 days (48 hours) after creation
+NotificationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 2 * 24 * 60 * 60 });
+
 export default mongoose.model<INotification>('Notification', NotificationSchema);

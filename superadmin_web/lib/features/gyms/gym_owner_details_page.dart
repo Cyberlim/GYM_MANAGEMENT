@@ -404,19 +404,19 @@ class GymOwnerDetailsPage extends ConsumerWidget {
                 title: 'Staff Members',
                 headerRow: _buildTableHeader(context, ['Name', 'Role', 'Email', 'Status']),
                 data: List<Map<String, dynamic>>.from(gym['staff'] ?? []),
-                rowBuilder: (context, item) => _buildStaffRow(context, gymId, item['_id'] ?? item['id'] ?? '', item['name'] ?? '', item['role'] ?? '', item['email'] ?? '', item['status'] ?? 'Active'),
+                rowBuilder: (context, item) => _buildStaffRow(context, gymId, item['_id'] ?? item['id'] ?? '', item['name'] ?? '', item['role'] ?? '', item['email'] ?? '', item['status'] ?? 'Active', imageUrl: item['imageUrl'] ?? item['profilePicture']),
               ),
               _TabData(
                 title: 'Trainers',
                 headerRow: _buildTableHeader(context, ['Name', 'Specialty', 'Email', 'Status']),
                 data: List<Map<String, dynamic>>.from(gym['trainers'] ?? []),
-                rowBuilder: (context, item) => _buildStaffRow(context, gymId, item['_id'] ?? item['id'] ?? '', item['name'] ?? '', item['role'] ?? 'Trainer', item['email'] ?? '', item['status'] ?? 'Active'),
+                rowBuilder: (context, item) => _buildStaffRow(context, gymId, item['_id'] ?? item['id'] ?? '', item['name'] ?? '', item['role'] ?? 'Trainer', item['email'] ?? '', item['status'] ?? 'Active', imageUrl: item['imageUrl'] ?? item['profilePicture']),
               ),
               _TabData(
                 title: 'Gym Members',
                 headerRow: _buildTableHeader(context, ['Name', 'Plan Type', 'Join Date', 'Status']),
                 data: List<Map<String, dynamic>>.from(gym['members'] ?? []),
-                rowBuilder: (context, item) => _buildMemberRow(context, gymId, item['_id'] ?? item['id'] ?? '', item['name'] ?? '', item['membershipPlan'] ?? item['plan'] ?? '', item['joinDate'] ?? item['date'] ?? '', item['status'] ?? 'Active'),
+                rowBuilder: (context, item) => _buildMemberRow(context, gymId, item['_id'] ?? item['id'] ?? '', item['name'] ?? '', item['membershipPlan'] ?? item['plan'] ?? '', item['joinDate'] ?? item['date'] ?? '', item['status'] ?? 'Active', imageUrl: item['imageUrl'] ?? item['profilePicture']),
               ),
             ],
           ),
@@ -455,7 +455,7 @@ class GymOwnerDetailsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildStaffRow(BuildContext context, String gymId, String id, String name, String role, String email, String status) {
+  Widget _buildStaffRow(BuildContext context, String gymId, String id, String name, String role, String email, String status, {String? imageUrl}) {
     Color statusBg = status == 'Active' ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1);
     Color statusText = status == 'Active' ? Colors.green : Colors.red;
 
@@ -472,7 +472,9 @@ class GymOwnerDetailsPage extends ConsumerWidget {
                   CircleAvatar(
                     radius: 14,
                     backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-                    child: Icon(LucideIcons.user, size: 14, color: AppTheme.primaryColor),
+                    backgroundImage: (imageUrl != null && imageUrl.isNotEmpty) ? NetworkImage(imageUrl) : null,
+                    onBackgroundImageError: (imageUrl != null && imageUrl.isNotEmpty) ? (exception, stackTrace) {} : null,
+                    child: (imageUrl == null || imageUrl.isEmpty) ? Icon(LucideIcons.user, size: 14, color: AppTheme.primaryColor) : null,
                   ),
                   const SizedBox(width: 12),
                   Text(name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
@@ -498,7 +500,7 @@ class GymOwnerDetailsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildMemberRow(BuildContext context, String gymId, String id, String name, String plan, String date, String status) {
+  Widget _buildMemberRow(BuildContext context, String gymId, String id, String name, String plan, String date, String status, {String? imageUrl}) {
     Color statusBg = status == 'Active' ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1);
     Color statusText = status == 'Active' ? Colors.green : Colors.red;
 
@@ -515,7 +517,9 @@ class GymOwnerDetailsPage extends ConsumerWidget {
                   CircleAvatar(
                     radius: 14,
                     backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-                    child: Icon(LucideIcons.user, size: 14, color: AppTheme.primaryColor),
+                    backgroundImage: (imageUrl != null && imageUrl.isNotEmpty) ? NetworkImage(imageUrl) : null,
+                    onBackgroundImageError: (imageUrl != null && imageUrl.isNotEmpty) ? (exception, stackTrace) {} : null,
+                    child: (imageUrl == null || imageUrl.isEmpty) ? Icon(LucideIcons.user, size: 14, color: AppTheme.primaryColor) : null,
                   ),
                   const SizedBox(width: 12),
                   Text(name, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
