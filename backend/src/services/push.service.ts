@@ -1,6 +1,7 @@
 import webpush from 'web-push';
 import dotenv from 'dotenv';
 import User from '../models/User.model';
+import Member from '../models/Member.model';
 
 dotenv.config();
 
@@ -23,26 +24,33 @@ if (publicKey && privateKey) {
  */
 export const sendPushNotificationToUser = async (userId: string, payload: { title: string; body?: string; url?: string; icon?: string, type?: string }) => {
   try {
-    const user = await User.findById(userId);
-    if (!user || !user.pushSubscriptions || user.pushSubscriptions.length === 0) {
+    let userOrMember: any = await User.findById(userId);
+    let isMember = false;
+    
+    if (!userOrMember) {
+      userOrMember = await Member.findById(userId);
+      isMember = true;
+    }
+
+    if (!userOrMember || !userOrMember.pushSubscriptions || userOrMember.pushSubscriptions.length === 0) {
       return;
     }
 
-    // Check if push notifications are enabled in user settings
-    if (user.settings && user.settings.pushNotifications === false) {
+    // Check if push notifications are enabled in user settings (only applies to Users right now)
+    if (!isMember && userOrMember.settings && userOrMember.settings.pushNotifications === false) {
       return;
     }
 
     // Filter by type if provided and if it's a superadmin (checking settings structure)
-    if (payload.type && user.settings) {
+    if (!isMember && payload.type && userOrMember.settings) {
       const type = payload.type;
-      if (type === 'system' && user.settings.systemAlerts === false) return;
-      if (type === 'registration' && user.settings.newGymSignups === false) return;
+      if (type === 'system' && userOrMember.settings.systemAlerts === false) return;
+      if (type === 'registration' && userOrMember.settings.newGymSignups === false) return;
       if (type === 'payment') {
         const titleLower = payload.title.toLowerCase();
         const isFailure = titleLower.includes('fail') || titleLower.includes('error');
-        if (isFailure && user.settings.paymentFailures === false) return;
-        if (!isFailure && user.settings.paymentReceived === false) return;
+        if (isFailure && userOrMember.settings.paymentFailures === false) return;
+        if (!isFailure && userOrMember.settings.paymentReceived === false) return;
       }
     }
 
@@ -51,7 +59,7 @@ export const sendPushNotificationToUser = async (userId: string, payload: { titl
 
     // Send push to all registered devices for this user
     await Promise.all(
-      user.pushSubscriptions.map(async (sub) => {
+      userOrMember.pushSubscriptions.map(async (sub: any) => {
         try {
           await webpush.sendNotification(sub, stringifiedPayload);
         } catch (error: any) {
@@ -67,9 +75,15 @@ export const sendPushNotificationToUser = async (userId: string, payload: { titl
 
     // Clean up stale subscriptions
     if (staleSubscriptions.length > 0) {
-      await User.findByIdAndUpdate(userId, {
-        $pullAll: { pushSubscriptions: staleSubscriptions }
-      });
+      if (isMember) {
+        await Member.findByIdAndUpdate(userId, {
+          $pullAll: { pushSubscriptions: staleSubscriptions }
+        });
+      } else {
+        await User.findByIdAndUpdate(userId, {
+          $pullAll: { pushSubscriptions: staleSubscriptions }
+        });
+      }
     }
   } catch (error) {
     console.error('Error in sendPushNotificationToUser:', error);

@@ -18,6 +18,11 @@ class SocketService {
   
   // Callback for new messages
   Function(Map<String, dynamic>)? onNewMessage;
+  
+  // Callbacks for real-time gym updates
+  Function(Map<String, dynamic>)? onMemberUpdated;
+  Function(Map<String, dynamic>)? onNewPayment;
+  Function(Map<String, dynamic>)? onNewMemberSupportMessage;
 
   void initSocket(String userId) {
     if (_socket != null && _socket!.connected) return;
@@ -57,6 +62,27 @@ class SocketService {
       debugPrint('Received new_suspension_message event: $data');
       if (onNewMessage != null) {
         onNewMessage!(data);
+      }
+    });
+
+    _socket!.on('member_updated', (data) {
+      debugPrint('Received member_updated event: $data');
+      if (onMemberUpdated != null) {
+        onMemberUpdated!(data);
+      }
+    });
+
+    _socket!.on('new_payment', (data) {
+      debugPrint('Received new_payment event: $data');
+      if (onNewPayment != null) {
+        onNewPayment!(data);
+      }
+    });
+
+    _socket!.on('new_member_support_message', (data) {
+      debugPrint('Received new_member_support_message event: $data');
+      if (onNewMemberSupportMessage != null) {
+        onNewMemberSupportMessage!(data);
       }
     });
 

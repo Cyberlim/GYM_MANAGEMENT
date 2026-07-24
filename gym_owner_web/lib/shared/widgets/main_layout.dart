@@ -12,6 +12,8 @@ import 'package:gym_owner_web/features/dashboard/providers/events_provider.dart'
 import 'package:gym_owner_web/features/notifications/providers/notifications_provider.dart';
 import 'package:gym_owner_web/core/providers/user_provider.dart';
 import 'package:gym_owner_web/features/members/providers/members_provider.dart';
+import 'package:gym_owner_web/features/support/providers/member_support_provider.dart';
+import 'package:gym_owner_web/features/payments/providers/payments_provider.dart';
 import 'package:gym_owner_web/features/trainers/providers/trainers_provider.dart';
 import 'package:gym_owner_web/features/staff/providers/staff_provider.dart';
 import 'package:gym_owner_web/features/members/members_page.dart';
@@ -64,6 +66,23 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Your account has been suspended.')),
           );
+        }
+      };
+      
+      socketService.onMemberUpdated = (data) {
+        // Refresh members list when a member updates (e.g. purchases a plan)
+        ref.invalidate(membersProvider);
+      };
+      
+      socketService.onNewPayment = (data) {
+        // Refresh payments list when a new payment comes in
+        ref.invalidate(paymentsProvider);
+      };
+
+      socketService.onNewMemberSupportMessage = (data) {
+        ref.invalidate(memberChatsProvider);
+        if (data['memberId'] != null) {
+          ref.read(memberMessagesProvider.notifier).receiveMessage(data);
         }
       };
     }
@@ -264,10 +283,17 @@ class _Sidebar extends ConsumerWidget {
                   badgeCount: unreadCount,
                 ),
                 _SidebarItem(
-                  icon: LucideIcons.lifeBuoy,
+                  icon: LucideIcons.headset,
                   title: 'Support',
                   isActive: location == '/support',
                   route: '/support',
+                ),
+                const SizedBox(height: 8),
+                _SidebarItem(
+                  icon: LucideIcons.radio,
+                  title: 'Broadcasts',
+                  isActive: location == '/broadcasts',
+                  route: '/broadcasts',
                 ),
 
                 const _SidebarSectionLabel(title: 'SYSTEM'),

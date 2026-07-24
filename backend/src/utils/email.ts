@@ -67,6 +67,24 @@ export const sendVerificationEmail = async (email: string, code: string) => {
   });
 };
 
+export const sendPasswordResetOTP = async (email: string, otp: string) => {
+  await sendEmail({
+    from: '"Gym Management" <noreply@gymmanagement.com>',
+    to: email,
+    subject: 'Password Reset Code',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        <h2 style="color: #6C5CE7; text-align: center;">Reset Your Password</h2>
+        <p style="font-size: 16px; color: #333;">You requested to reset your password. Use the verification code below to complete the process.</p>
+        <div style="background-color: #f4f4f4; padding: 15px; text-align: center; border-radius: 8px; margin: 20px 0;">
+          <strong style="font-size: 24px; letter-spacing: 4px; color: #333;">${otp}</strong>
+        </div>
+        <p style="font-size: 14px; color: #666;">This code is valid for 10 minutes. If you did not request this, please ignore this email.</p>
+      </div>
+    `,
+  });
+};
+
 export const sendWelcomeEmail = async (email: string, name: string) => {
   await sendEmail({
     from: '"Gym Management" <noreply@gymmanagement.com>',
@@ -149,6 +167,28 @@ export const sendReactivationEmail = async (email: string, name: string) => {
         <p>Good news! Your gym owner account has been successfully reactivated by the Superadmin team.</p>
         <p>You can now log into your account and resume managing your gym operations.</p>
         <p>Thank you for your patience!</p>
+      </div>
+    `,
+  });
+};
+
+export const sendMemberWelcomeEmail = async (email: string, name: string, loginId: string, phone: string, plainPassword: string) => {
+  await sendEmail({
+    from: '"Gym Management" <noreply@gymmanagement.com>',
+    to: email,
+    subject: 'Welcome to the Gym - Your Login Credentials',
+    text: `Welcome ${name}! You can log in using either your Email (${loginId}) or Phone (${phone}). Your temporary password is ${plainPassword}.`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+        <h2 style="color: #333;">Welcome ${name}!</h2>
+        <p>Your gym membership account has been successfully created.</p>
+        <p>You can log in to the Member App using either your Email or Phone number:</p>
+        <div style="background-color: #f4f4f4; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0;"><strong>Login ID (Email):</strong> ${loginId}</p>
+          <p style="margin: 10px 0 0 0;"><strong>Login ID (Phone):</strong> ${phone}</p>
+          <p style="margin: 10px 0 0 0;"><strong>Temporary Password:</strong> ${plainPassword}</p>
+        </div>
+        <p style="color: #d9534f; font-weight: bold;">For your security, please change your password immediately after your first login.</p>
       </div>
     `,
   });

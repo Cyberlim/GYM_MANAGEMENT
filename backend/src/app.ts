@@ -34,6 +34,8 @@ import uploadRoutes from './routes/upload.routes';
 import supportRoutes from './routes/support.routes';
 import notificationRoutes from './routes/notification.routes';
 import eventRoutes from './routes/event.routes';
+import memberAuthRoutes from './routes/member.auth.routes';
+import attendanceRoutes from './routes/attendance.routes';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/gyms', gymRoutes);
@@ -51,6 +53,8 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/support', supportRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/member-app', memberAuthRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 // Global Error Handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

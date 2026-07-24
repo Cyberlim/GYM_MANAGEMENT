@@ -3,6 +3,8 @@ import Member from '../models/Member.model';
 import Gym from '../models/Gym.model';
 import Trainer from '../models/Trainer.model';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import bcrypt from 'bcryptjs';
+import { sendMemberWelcomeEmail } from '../utils/email';
 
 // Helper to get gym ID for the current user
 const getGymId = async (userId: string) => {
@@ -32,6 +34,20 @@ export const addMember = async (req: AuthRequest, res: Response): Promise<void> 
     const gymId = await getGymId(req.user._id);
     const { name, email, phone, membershipPlan, status, joinDate, expiryDate, totalCheckIns, imageUrl, dob, address, documentUrl, trainerId } = req.body;
 
+    if (!dob) {
+      res.status(400).json({ message: 'Date of Birth is required' });
+      return;
+    }
+
+    const dobDate = new Date(dob);
+    const day = dobDate.getDate().toString().padStart(2, '0');
+    const month = (dobDate.getMonth() + 1).toString().padStart(2, '0');
+    const year = dobDate.getFullYear();
+    const initialPassword = `${day}${month}${year}`;
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(initialPassword, salt);
+
     const member = await Member.create({
       gymId,
       name,
@@ -47,10 +63,18 @@ export const addMember = async (req: AuthRequest, res: Response): Promise<void> 
       address: address || '',
       documentUrl: documentUrl || '',
       trainerId: trainerId || undefined,
+      password: hashedPassword,
+      isFirstLogin: true,
     });
 
     if (trainerId) {
       await Trainer.findByIdAndUpdate(trainerId, { $inc: { assignedMembers: 1 } });
+    }
+
+    if (email) {
+      sendMemberWelcomeEmail(email, name, email, phone || 'N/A', initialPassword).catch((err) => 
+        console.error('Failed to send welcome email to member:', err)
+      );
     }
 
     res.status(201).json(member);

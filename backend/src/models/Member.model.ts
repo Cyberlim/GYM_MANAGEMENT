@@ -15,6 +15,11 @@ export interface IMember extends Document {
   address?: string;
   documentUrl?: string;
   trainerId?: mongoose.Types.ObjectId;
+  password?: string;
+  isFirstLogin: boolean;
+  resetPasswordOtp?: string;
+  resetPasswordExpires?: Date;
+  pushSubscriptions?: any[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -35,6 +40,11 @@ const MemberSchema: Schema = new Schema(
     address: { type: String, default: '' },
     documentUrl: { type: String, default: '' },
     trainerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Trainer' },
+    password: { type: String },
+    isFirstLogin: { type: Boolean, default: true },
+    resetPasswordOtp: { type: String },
+    resetPasswordExpires: { type: Date },
+    pushSubscriptions: { type: [Schema.Types.Mixed], default: [] },
   },
   { timestamps: true }
 );

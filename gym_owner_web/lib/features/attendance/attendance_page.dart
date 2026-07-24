@@ -316,15 +316,13 @@ class _AttendanceRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final records = ref.watch(attendanceProvider);
+    final recordsAsync = ref.watch(attendanceProvider);
+    final records = recordsAsync.value ?? [];
     final record = records.where((r) => r.memberId == member.id && _isSameDay(r.date, date)).firstOrNull;
 
     final plans = ref.watch(plansProvider).value ?? [];
     final plan = plans.where((p) => p.name == member.membershipPlan).firstOrNull;
     final planColor = plan != null ? _hexToColor(plan.colorHex) : Theme.of(context).colorScheme.primary;
-    
-    // We also need to watch attendanceProvider to trigger rebuilds when state changes
-    ref.watch(attendanceProvider);
 
     return Container(
         padding: const EdgeInsets.all(16),
@@ -401,7 +399,7 @@ class _AttendanceRow extends ConsumerWidget {
                   selected: record != null ? {record.status} : <String>{},
                   onSelectionChanged: (Set<String> selection) {
                     if (selection.isNotEmpty) {
-                      ref.read(attendanceProvider.notifier).markAttendance(member.id, date, selection.first);
+                      ref.read(attendanceProvider.notifier).markAttendance(member.id, 'Member', date, selection.first);
                     }
                   },
                   style: ButtonStyle(
@@ -436,11 +434,9 @@ class _StaffAttendanceRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final records = ref.watch(attendanceProvider);
+    final recordsAsync = ref.watch(attendanceProvider);
+    final records = recordsAsync.value ?? [];
     final record = records.where((r) => r.memberId == staff.id && _isSameDay(r.date, date)).firstOrNull;
-    
-    // We also need to watch attendanceProvider to trigger rebuilds when state changes
-    ref.watch(attendanceProvider);
 
     return Container(
         padding: const EdgeInsets.all(16),
@@ -518,7 +514,7 @@ class _StaffAttendanceRow extends ConsumerWidget {
                   selected: record != null ? {record.status} : <String>{},
                   onSelectionChanged: (Set<String> selection) {
                     if (selection.isNotEmpty) {
-                      ref.read(attendanceProvider.notifier).markAttendance(staff.id, date, selection.first);
+                      ref.read(attendanceProvider.notifier).markAttendance(staff.id, 'Staff', date, selection.first);
                     }
                   },
                   style: ButtonStyle(
@@ -553,11 +549,9 @@ class _TrainerAttendanceRow extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final records = ref.watch(attendanceProvider);
+    final recordsAsync = ref.watch(attendanceProvider);
+    final records = recordsAsync.value ?? [];
     final record = records.where((r) => r.memberId == trainer.id && _isSameDay(r.date, date)).firstOrNull;
-    
-    // We also need to watch attendanceProvider to trigger rebuilds when state changes
-    ref.watch(attendanceProvider);
 
     return Container(
         padding: const EdgeInsets.all(16),
@@ -635,7 +629,7 @@ class _TrainerAttendanceRow extends ConsumerWidget {
                   selected: record != null ? {record.status} : <String>{},
                   onSelectionChanged: (Set<String> selection) {
                     if (selection.isNotEmpty) {
-                      ref.read(attendanceProvider.notifier).markAttendance(trainer.id, date, selection.first);
+                      ref.read(attendanceProvider.notifier).markAttendance(trainer.id, 'Trainer', date, selection.first);
                     }
                   },
                   style: ButtonStyle(

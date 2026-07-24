@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:gym_owner_web/features/members/providers/members_provider.dart';
 import 'package:gym_owner_web/features/trainers/providers/trainers_provider.dart';
+import 'package:gym_owner_web/features/plans/providers/plans_provider.dart';
 import 'package:gym_owner_web/data/models/gym_owner_models.dart';
 import 'package:gym_owner_web/shared/widgets/hover_zoom_effect.dart';
 import 'package:intl/intl.dart';
@@ -464,7 +465,7 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                         },
                         child: InputDecorator(
                           decoration: InputDecoration(
-                            labelText: 'Date of Birth (Optional)',
+                            labelText: 'Date of Birth (Required)',
                             prefixIcon: const Icon(LucideIcons.calendarDays),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                           ),
@@ -484,18 +485,35 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                     ),
                     const SizedBox(height: 16),
                     buildResponsiveRow(
-                      DropdownButtonFormField<String>(
-                        value: selectedPlan,
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          labelText: 'Membership Plan',
-                          prefixIcon: const Icon(LucideIcons.creditCard),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        items: ['Basic Monthly', 'Pro Annual', 'Student', 'Gold Plan']
-                            .map((p) => DropdownMenuItem(value: p, child: Text(p, maxLines: 1, overflow: TextOverflow.ellipsis)))
-                            .toList(),
-                        onChanged: (val) => setState(() => selectedPlan = val ?? 'Pro Annual'),
+                      Consumer(
+                        builder: (context, ref, child) {
+                          final plansAsync = ref.watch(plansProvider);
+                          return plansAsync.when(
+                            loading: () => const Center(child: CircularProgressIndicator()),
+                            error: (err, stack) => const Text('Failed to load plans'),
+                            data: (plans) {
+                              final planNames = plans.map((p) => p.name).toList();
+                              // Ensure the selected plan is in the list to avoid assertion errors
+                              if (selectedPlan.isNotEmpty && !planNames.contains(selectedPlan)) {
+                                planNames.add(selectedPlan);
+                              }
+                              
+                              return DropdownButtonFormField<String>(
+                                value: selectedPlan.isEmpty && planNames.isNotEmpty ? planNames.first : (selectedPlan.isEmpty ? null : selectedPlan),
+                                isExpanded: true,
+                                decoration: InputDecoration(
+                                  labelText: 'Membership Plan',
+                                  prefixIcon: const Icon(LucideIcons.creditCard),
+                                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                items: planNames
+                                    .map((p) => DropdownMenuItem(value: p, child: Text(p, maxLines: 1, overflow: TextOverflow.ellipsis)))
+                                    .toList(),
+                                onChanged: (val) => setState(() => selectedPlan = val ?? ''),
+                              );
+                            },
+                          );
+                        }
                       ),
                       DropdownButtonFormField<String>(
                         value: selectedStatus,
@@ -716,7 +734,7 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                   ? const CircularProgressIndicator()
                   : ElevatedButton(
                   onPressed: () async {
-                    if (nameController.text.isNotEmpty && emailController.text.isNotEmpty) {
+                    if (nameController.text.isNotEmpty && emailController.text.isNotEmpty && selectedDob != null) {
                       setState(() => isUploading = true);
                       
                       try {
@@ -786,6 +804,10 @@ void showAddMemberDialog(BuildContext context, WidgetRef ref, {Member? memberToE
                           );
                         }
                       }
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please fill all required fields including Date of Birth.'), backgroundColor: Colors.orange),
+                      );
                     }
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).colorScheme.primary),

@@ -102,7 +102,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
   }
 
   Future<void> _enablePushNotifications() async {
-    final baseUrl = dotenv.env['API_URL'] ?? 'http://localhost:5000/api';
+    final baseUrl = dotenv.env['API_URL']!;
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('token');
     final headers = {

@@ -20,6 +20,7 @@ import '../../features/notifications/notifications_page.dart';
 import '../../features/profile/profile_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/support/support_page.dart';
+import '../../features/broadcast/broadcast_page.dart';
 import '../../shared/widgets/main_layout.dart';
 
 import '../../features/onboarding/landing_page.dart';
@@ -125,6 +126,7 @@ final appRouter = GoRouter(
         if (state.uri.path.contains('/profile')) title = 'Profile';
         if (state.uri.path.contains('/settings')) title = 'Settings';
         if (state.uri.path.contains('/support')) title = 'Support';
+        if (state.uri.path.contains('/broadcasts')) title = 'Broadcasts';
         
         return MainLayout(title: title, child: child);
       },
@@ -188,6 +190,10 @@ final appRouter = GoRouter(
         GoRoute(
           path: '/support',
           builder: (context, state) => const SupportPage(),
+        ),
+        GoRoute(
+          path: '/broadcasts',
+          builder: (context, state) => const BroadcastPage(),
         ),
         GoRoute(
           path: '/trainer-details/:id',

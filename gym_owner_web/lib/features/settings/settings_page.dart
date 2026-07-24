@@ -30,9 +30,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     if (key == 'pushNotifications') {
       try {
-        final baseUrl = dotenv.env['API_URL'] ?? 'http://localhost:5000/api';
         final prefs = await SharedPreferences.getInstance();
         final token = prefs.getString('token');
+        final baseUrl = dotenv.env['API_URL']!;
         final headers = {
           'Content-Type': 'application/json',
           if (token != null) 'Authorization': 'Bearer $token',

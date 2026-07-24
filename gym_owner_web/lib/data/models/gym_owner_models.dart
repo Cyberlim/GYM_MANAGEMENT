@@ -344,6 +344,25 @@ class AttendanceRecord {
     this.checkInTime,
     required this.status,
   });
+
+  factory AttendanceRecord.fromJson(Map<String, dynamic> json) {
+    return AttendanceRecord(
+      id: json['_id'] ?? '',
+      memberId: json['personId'] ?? '',
+      date: DateTime.parse(json['date']),
+      checkInTime: json['checkInTime'] != null ? DateTime.parse(json['checkInTime']).toLocal() : null,
+      status: json['status'] ?? 'Absent',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'personId': memberId,
+      'date': date.toIso8601String(),
+      'checkInTime': checkInTime?.toIso8601String(),
+      'status': status,
+    };
+  }
 }
 
 class PaymentRecord {

@@ -256,7 +256,7 @@ class _NotificationSettingsViewState extends ConsumerState<_NotificationSettings
 
   void _handlePushNotificationToggle(bool value) async {
     try {
-      final baseUrl = dotenv.env['API_URL'] ?? 'http://localhost:5000/api';
+      final baseUrl = dotenv.env['API_URL']!;
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       final headers = {
