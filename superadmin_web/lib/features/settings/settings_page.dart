@@ -401,8 +401,7 @@ class _SecuritySettingsViewState extends ConsumerState<_SecuritySettingsView> {
 
   void _handle2FAToggle(bool value) async {
     if (!value) {
-      // Logic to disable 2FA could go here. For now, we only support enabling.
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Disabling 2FA requires contacting support.')));
+      _showDisable2FAModal();
       return;
     }
 
@@ -462,6 +461,95 @@ class _SecuritySettingsViewState extends ConsumerState<_SecuritySettingsView> {
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('2FA Enabled Successfully!'), backgroundColor: Colors.green));
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invalid Code'), backgroundColor: Colors.red));
+                        }
+                      },
+                      isFullWidth: false,
+                    ),
+              ],
+            );
+          }
+        );
+      }
+    );
+  }
+
+  void _showDisable2FAModal() {
+    final controller = TextEditingController();
+    String selectedMethod = 'password'; // 'password' or 'otp'
+    bool isVerifying = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              title: const Text('Disable Two-Factor Authentication'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Please verify your identity to disable 2FA.'),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Radio<String>(
+                        value: 'password',
+                        groupValue: selectedMethod,
+                        onChanged: (val) {
+                          if (val != null) setModalState(() => selectedMethod = val);
+                        },
+                      ),
+                      const Text('Account Password'),
+                      const SizedBox(width: 16),
+                      Radio<String>(
+                        value: 'otp',
+                        groupValue: selectedMethod,
+                        onChanged: (val) {
+                          if (val != null) setModalState(() => selectedMethod = val);
+                        },
+                      ),
+                      const Text('Authenticator App'),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  CustomTextField(
+                    label: selectedMethod == 'password' ? 'Password' : 'Authenticator Code',
+                    hint: selectedMethod == 'password' ? 'Enter your password' : 'Enter 6-digit code',
+                    controller: controller,
+                    isPassword: selectedMethod == 'password',
+                    keyboardType: selectedMethod == 'password' ? TextInputType.text : TextInputType.number,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    setState(() => _twoFactorAuth = true); // revert toggle visual state
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Cancel'),
+                ),
+                isVerifying 
+                  ? const CircularProgressIndicator() 
+                  : PrimaryButton(
+                      text: 'Verify & Disable',
+                      onPressed: () async {
+                        if (controller.text.isEmpty) return;
+                        setModalState(() => isVerifying = true);
+                        try {
+                          final success = await ref.read(profileProvider.notifier).disable2FA(selectedMethod, controller.text);
+                          if (success) {
+                            setState(() => _twoFactorAuth = false);
+                            if (mounted) Navigator.pop(context);
+                            if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('2FA Disabled Successfully!'), backgroundColor: Colors.green));
+                          }
+                        } catch (e) {
+                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red));
+                          setState(() => _twoFactorAuth = true);
+                        } finally {
+                          if (mounted) setModalState(() => isVerifying = false);
                         }
                       },
                       isFullWidth: false,

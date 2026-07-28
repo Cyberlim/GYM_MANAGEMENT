@@ -87,12 +87,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         fit: StackFit.expand,
         children: [
           // Background Image
-          Image.network(
-            'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop',
+          Image.asset(
+            'assets/images/login_bg.jpg',
             fit: BoxFit.cover,
           ),
-          // Dark Overlay
-          Container(color: Colors.black.withOpacity(0.5)),
+          // Light Overlay
+          Container(color: Colors.white.withOpacity(0.3)),
           // Login Form
           SafeArea(
             child: Center(
@@ -105,9 +105,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(32.0),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white.withOpacity(0.5),
                         borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: Colors.white.withOpacity(0.2)),
+                        border: Border.all(color: Colors.grey.withOpacity(0.2)),
                       ),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -124,23 +124,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           const SizedBox(height: 24),
                           const Text(
                             'Member Login',
-                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.black87),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             'Welcome back to your gym app',
-                            style: TextStyle(color: Colors.white.withOpacity(0.8)),
+                            style: TextStyle(color: Colors.black54),
                           ),
                           const SizedBox(height: 48),
                           TextField(
                             controller: _loginIdController,
-                            style: const TextStyle(color: Colors.white),
+                            style: const TextStyle(color: Colors.black87),
                             decoration: InputDecoration(
                               labelText: 'Email or Phone Number',
-                              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-                              prefixIcon: Icon(LucideIcons.user, color: Colors.white.withOpacity(0.7)),
+                              labelStyle: const TextStyle(color: Colors.black54),
+                              prefixIcon: const Icon(LucideIcons.user, color: Colors.black54),
                               filled: true,
-                              fillColor: Colors.black.withOpacity(0.2),
+                              fillColor: Colors.grey.withOpacity(0.1),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
@@ -151,17 +151,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           TextField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
-                            style: const TextStyle(color: Colors.white),
+                            style: const TextStyle(color: Colors.black87),
                             decoration: InputDecoration(
                               labelText: 'Password',
-                              labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-                              prefixIcon: Icon(LucideIcons.lock, color: Colors.white.withOpacity(0.7)),
+                              labelStyle: const TextStyle(color: Colors.black54),
+                              prefixIcon: const Icon(LucideIcons.lock, color: Colors.black54),
                               suffixIcon: IconButton(
-                                icon: Icon(_obscurePassword ? LucideIcons.eye : LucideIcons.eyeOff, color: Colors.white.withOpacity(0.7)),
+                                icon: Icon(_obscurePassword ? LucideIcons.eye : LucideIcons.eyeOff, color: Colors.black54),
                                 onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                               ),
                               filled: true,
-                              fillColor: Colors.black.withOpacity(0.2),
+                              fillColor: Colors.grey.withOpacity(0.1),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
@@ -173,7 +173,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             children: [
                               Theme(
                                 data: Theme.of(context).copyWith(
-                                  unselectedWidgetColor: Colors.white.withOpacity(0.7),
+                                  unselectedWidgetColor: Colors.black54,
                                 ),
                                 child: Checkbox(
                                   value: _rememberMe,
@@ -186,17 +186,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                   checkColor: Colors.white,
                                 ),
                               ),
-                              Text(
+                              const Text(
                                 'Remember Me',
-                                style: TextStyle(color: Colors.white.withOpacity(0.8)),
-                              ),
-                              const Spacer(),
-                              TextButton(
-                                onPressed: () => context.push('/forgot-password'),
-                                child: const Text(
-                                  'Forgot Password?',
-                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                                ),
+                                style: TextStyle(color: Colors.black87),
                               ),
                             ],
                           ),
@@ -220,13 +212,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          TextButton(
-                            onPressed: () => context.push('/forgot-password'),
-                            child: Text(
-                              'Forgot Password?',
-                              style: TextStyle(color: Colors.white.withOpacity(0.8)),
+                            TextButton(
+                              onPressed: () => context.push('/forgot-password'),
+                              child: const Text(
+                                'Forgot Password?',
+                                style: TextStyle(color: Colors.black54, fontWeight: FontWeight.bold),
+                              ),
                             ),
-                          ),
                         ],
                       ),
                     ),

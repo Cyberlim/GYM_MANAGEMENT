@@ -1,21 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gym_owner_web/main.dart';
+import 'package:gym_owner_web/core/providers/user_provider.dart';
+import 'package:gym_owner_web/data/api/api_service.dart';
 
-class PaymentPage extends StatefulWidget {
+class PaymentPage extends ConsumerStatefulWidget {
   const PaymentPage({super.key});
 
   @override
-  State<PaymentPage> createState() => _PaymentPageState();
+  ConsumerState<PaymentPage> createState() => _PaymentPageState();
 }
 
-class _PaymentPageState extends State<PaymentPage> {
+class _PaymentPageState extends ConsumerState<PaymentPage> {
   String _selectedMethod = 'card'; // 'card', 'upi'
+  bool _isProcessing = false;
 
   @override
   Widget build(BuildContext context) {
     final String plan = GoRouterState.of(context).uri.queryParameters['plan'] ?? 'pro';
-    final String price = plan == 'starter' ? '\$49' : plan == 'enterprise' ? '\$249' : '\$99';
+    final String billing = GoRouterState.of(context).uri.queryParameters['billing'] ?? 'monthly';
+    
+    int basePrice = plan == 'starter' ? 49 : plan == 'enterprise' ? 249 : 99;
+    if (billing == 'quarterly') basePrice = (basePrice * 3 * 0.9).round();
+    if (billing == 'annually') basePrice = (basePrice * 12 * 0.85).round();
+    final String price = '\$$basePrice';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -190,7 +200,23 @@ class _PaymentPageState extends State<PaymentPage> {
                 const SizedBox(height: 32),
                 
                 ElevatedButton(
-                  onPressed: () => context.go('/success'),
+                  onPressed: _isProcessing ? null : () async {
+                    setState(() => _isProcessing = true);
+                    try {
+                      final api = ApiService();
+                      await api.post('/gyms/subscribe', {
+                        'plan': plan,
+                        'billingCycle': billing,
+                        'isTrialActive': false,
+                      });
+                      await ref.read(userProvider.notifier).refresh();
+                      if (mounted) context.go('/success');
+                    } catch (e) {
+                      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Payment failed: $e')));
+                    } finally {
+                      if (mounted) setState(() => _isProcessing = false);
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6366F1),
                     foregroundColor: Colors.white,
@@ -200,15 +226,22 @@ class _PaymentPageState extends State<PaymentPage> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(
-                        _selectedMethod == 'card' ? LucideIcons.lock : LucideIcons.externalLink, 
-                        size: 16
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _selectedMethod == 'card' ? 'Pay $price Securely' : 'Continue to Pay', 
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
-                      ),
+                      if (_isProcessing)
+                        const SizedBox(
+                          width: 20, height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      else ...[
+                        Icon(
+                          _selectedMethod == 'card' ? LucideIcons.lock : LucideIcons.externalLink, 
+                          size: 16
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          _selectedMethod == 'card' ? 'Pay $price Securely' : 'Continue to Pay', 
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)
+                        ),
+                      ],
                     ],
                   ),
                 ),

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import '../../core/config/env.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -39,7 +40,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     String userName = user['name'] ?? 'Not provided';
     String email = user['email'] ?? 'Not provided';
     String role = user['role'] == 'superadmin' ? 'Superadmin' : 'Gym Owner';
-    String profileImage = user['profileImage'] ?? 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150&h=150';
+    String profileImage = user['profileImage']?.toString().replaceAll('\\', '/') ?? '';
+    if (profileImage.isNotEmpty && !profileImage.startsWith('http')) {
+      profileImage = profileImage.startsWith('/') 
+          ? '${Env.baseUrl}$profileImage' 
+          : '${Env.baseUrl}/$profileImage';
+    }
     if (profileImage.isEmpty) {
       profileImage = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150&h=150';
     }

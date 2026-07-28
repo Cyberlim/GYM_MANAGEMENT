@@ -163,8 +163,6 @@ class SupportNotifier extends Notifier<List<SupportTicket>> {
   }
 
   Future<void> sendMessage(String ticketId, String messageText) async {
-    // If ticketId starts with SUSP-, it's a suspension ticket
-    if (ticketId.startsWith('SUSP-')) {
       try {
         final prefs = await SharedPreferences.getInstance();
         final token = prefs.getString('token');
@@ -194,7 +192,6 @@ class SupportNotifier extends Notifier<List<SupportTicket>> {
         print('Error sending message: $e');
       }
       return;
-    }
 
     final newMessage = ChatMessage(
       id: const Uuid().v4(),
@@ -239,52 +236,41 @@ class SupportNotifier extends Notifier<List<SupportTicket>> {
       return ticket;
     }).toList();
 
-    if (ticketId.startsWith('SUSP-')) {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final token = prefs.getString('token');
-        if (token == null) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null) return;
 
-        await http.put(
-          Uri.parse('${Env.apiUrl}/support/suspensions/$ticketId/read'),
-          headers: {'Authorization': 'Bearer $token'},
-        );
-      } catch (e) {
-        print('Error marking ticket as read: $e');
-      }
+      await http.put(
+        Uri.parse('${Env.apiUrl}/support/suspensions/$ticketId/read'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
+    } catch (e) {
+      print('Error marking ticket as read: $e');
     }
   }
 
   Future<void> clearChat(String ticketId) async {
-    if (ticketId.startsWith('SUSP-')) {
-      try {
-        final prefs = await SharedPreferences.getInstance();
-        final token = prefs.getString('token');
-        if (token == null) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null) return;
 
-        final response = await http.delete(
-          Uri.parse('${Env.apiUrl}/support/suspensions/$ticketId/messages'),
-          headers: {'Authorization': 'Bearer $token'},
-        );
+      final response = await http.delete(
+        Uri.parse('${Env.apiUrl}/support/suspensions/$ticketId/messages'),
+        headers: {'Authorization': 'Bearer $token'},
+      );
 
-        if (response.statusCode == 200) {
-          state = state.map((ticket) {
-            if (ticket.id == ticketId) {
-              return ticket.copyWith(messages: []);
-            }
-            return ticket;
-          }).toList();
-        }
-      } catch (e) {
-        print('Error clearing chat: $e');
+      if (response.statusCode == 200) {
+        state = state.map((ticket) {
+          if (ticket.id == ticketId) {
+            return ticket.copyWith(messages: []);
+          }
+          return ticket;
+        }).toList();
       }
-    } else {
-      state = state.map((ticket) {
-        if (ticket.id == ticketId) {
-          return ticket.copyWith(messages: []);
-        }
-        return ticket;
-      }).toList();
+    } catch (e) {
+      print('Error clearing chat: $e');
     }
   }
 }

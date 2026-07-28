@@ -50,16 +50,26 @@ final appRouter = GoRouter(
       return null;
     }
 
-    final isOnboardingRoute = state.uri.path == '/gym-setup' ||
-                              state.uri.path == '/start-trial' ||
+    final isInitialOnboardingRoute = state.uri.path == '/gym-setup' || state.uri.path == '/start-trial';
+    
+    final isOnboardingRoute = isInitialOnboardingRoute ||
                               state.uri.path == '/choose-plan' ||
                               state.uri.path == '/payment' ||
                               state.uri.path == '/success';
                               
+    final requiresUpgrade = prefs.getBool('requiresUpgrade') ?? false;
+
     if (!isGymSetup) {
       if (!isOnboardingRoute) return '/gym-setup';
     } else {
-      if (isPublicRoute || isOnboardingRoute) return '/dashboard';
+      if (isPublicRoute || isInitialOnboardingRoute) return '/dashboard';
+      
+      if (requiresUpgrade) {
+        final isAllowedWhenLocked = state.uri.path == '/dashboard' || isOnboardingRoute;
+        if (!isAllowedWhenLocked) {
+          return '/dashboard';
+        }
+      }
     }
     
     return null;

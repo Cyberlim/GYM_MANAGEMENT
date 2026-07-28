@@ -217,6 +217,36 @@ class ProfileNotifier extends Notifier<UserProfile> {
     }
   }
 
+  Future<bool> disable2FA(String method, String code) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null) return false;
+
+      final response = await http.post(
+        Uri.parse('${Env.apiUrl}/auth/2fa/disable'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'method': method,
+          'code': code,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        await fetchProfile();
+        return true;
+      } else {
+        final error = jsonDecode(response.body);
+        throw Exception(error['message'] ?? 'Failed to disable 2FA');
+      }
+    } catch (e) {
+      throw e;
+    }
+  }
+
   Future<bool> verify2FASetup(String code) async {
     try {
       final prefs = await SharedPreferences.getInstance();

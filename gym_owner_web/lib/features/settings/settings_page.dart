@@ -216,7 +216,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   void _handle2FAToggle(bool value) async {
     if (!value) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Disabling 2FA requires contacting support.')));
+      _showDisable2FAModal();
       return;
     }
 
@@ -359,6 +359,127 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     );
   }
 
+  void _showDisable2FAModal() {
+    final controller = TextEditingController();
+    String selectedMethod = 'password';
+    bool isVerifying = false;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              backgroundColor: Theme.of(context).colorScheme.surface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              title: const Padding(
+                padding: EdgeInsets.only(top: 16.0),
+                child: Center(
+                  child: Text('Disable Two-Factor Authentication', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Please verify your identity to disable 2FA.', style: TextStyle(fontSize: 16, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6))),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Radio<String>(
+                        value: 'password',
+                        groupValue: selectedMethod,
+                        activeColor: const Color(0xFFE43A15),
+                        onChanged: (val) {
+                          if (val != null) setModalState(() => selectedMethod = val);
+                        },
+                      ),
+                      const Text('Account Password', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const SizedBox(width: 16),
+                      Radio<String>(
+                        value: 'otp',
+                        groupValue: selectedMethod,
+                        activeColor: const Color(0xFFE43A15),
+                        onChanged: (val) {
+                          if (val != null) setModalState(() => selectedMethod = val);
+                        },
+                      ),
+                      const Text('Authenticator App', style: TextStyle(fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(selectedMethod == 'password' ? 'Password' : 'Verification Code', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: controller,
+                    obscureText: selectedMethod == 'password',
+                    keyboardType: selectedMethod == 'password' ? TextInputType.text : TextInputType.number,
+                    decoration: InputDecoration(
+                      hintText: selectedMethod == 'password' ? 'Enter your password' : 'Enter 6-digit code',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Theme.of(context).dividerColor.withOpacity(0.2)),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    ),
+                  ),
+                ],
+              ),
+              actionsPadding: const EdgeInsets.only(bottom: 24, right: 24, left: 24),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('Cancel', style: TextStyle(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.bold)),
+                ),
+                isVerifying 
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 32.0),
+                      child: CircularProgressIndicator(),
+                    )
+                  : ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF111111),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () async {
+                        if (controller.text.isEmpty) return;
+                        setModalState(() => isVerifying = true);
+                        try {
+                          await ref.read(userProvider.notifier).disable2FA(selectedMethod, controller.text);
+                          if (mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('2FA Disabled Successfully!'), backgroundColor: Colors.green));
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red));
+                          }
+                        } finally {
+                          if (mounted) setModalState(() => isVerifying = false);
+                        }
+                      },
+                      child: const Text('Verify & Disable', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+              ],
+            );
+          }
+        );
+      }
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final userData = ref.watch(userProvider).value;
@@ -444,7 +565,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 trailing: ElevatedButton(
                   onPressed: () {
                     if (twoFactorEnabled) {
-                      _updateSetting('twoFactorEnabled', false);
+                      _handle2FAToggle(false);
                     } else {
                       _handle2FAToggle(true);
                     }

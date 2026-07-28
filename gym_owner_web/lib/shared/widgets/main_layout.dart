@@ -107,6 +107,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
         child: _Sidebar()
       ),
       body: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (showSidebar) const _Sidebar(),
           Expanded(
@@ -136,23 +137,42 @@ class _Sidebar extends ConsumerWidget {
     final userState = ref.watch(userProvider);
 
     int trialDaysRemaining = 0;
+    int planDaysRemaining = 0;
     bool isTrial = false;
+    bool hasPlan = false;
+    String currentPlan = '';
     
     if (userState.value != null && userState.value!.gym != null) {
       final gymData = userState.value!.gym!;
       isTrial = gymData['trialActive'] == true || gymData['trialActive'] == 'true';
+      final planStr = gymData['subscriptionPlan']?.toString().toLowerCase() ?? '';
+      hasPlan = planStr.isNotEmpty && planStr != 'null' && planStr != 'pending' && planStr != 'trial' && planStr != 'free trial';
+      currentPlan = planStr;
+      
       if (isTrial && gymData['createdAt'] != null) {
          final createdAt = DateTime.parse(gymData['createdAt']);
          final trialEnd = createdAt.add(const Duration(days: 14));
          trialDaysRemaining = trialEnd.difference(DateTime.now()).inDays;
          if (trialDaysRemaining < 0) trialDaysRemaining = 0;
       }
+      
+      if (hasPlan && gymData['subscriptionExpiryDate'] != null) {
+         final expiryDate = DateTime.parse(gymData['subscriptionExpiryDate']);
+         planDaysRemaining = expiryDate.difference(DateTime.now()).inDays;
+         if (planDaysRemaining < 0) planDaysRemaining = 0;
+      } else if (hasPlan) {
+         // Fallback if expiry date wasn't set previously
+         planDaysRemaining = 30;
+      }
     }
+
+    final bool requiresUpgrade = (!hasPlan && (!isTrial || trialDaysRemaining <= 0)) || (hasPlan && planDaysRemaining <= 0);
 
     return Container(
       width: 260,
-      color: const Color(0xFF161616), // Dark sidebar background
+      color: const Color(0xFF161616),
       child: Column(
+        mainAxisSize: MainAxisSize.max,
         children: [
           // Logo Area
           Padding(
@@ -309,55 +329,72 @@ class _Sidebar extends ConsumerWidget {
                   isActive: location == '/profile',
                   route: '/profile',
                 ),
-
-                // Upgrade Plan Widget
-                Container(
-                  margin: const EdgeInsets.symmetric(vertical: 16),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1A1C23), // Dark background for the card
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withOpacity(0.05)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(8),
+                const SizedBox(height: 32),
+                // Plan / Upgrade Widget (now scrolls)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 0, 0, 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFFCFFF50), Color(0xFFA1D010)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(hasPlan ? LucideIcons.shieldCheck : LucideIcons.zap, color: Colors.black, size: 18),
                             ),
-                            child: const Icon(LucideIcons.zap, color: Colors.white, size: 18),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            isTrial ? '$trialDaysRemaining Days Trial Left' : 'Free Plan',
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Text(
-                        'Upgrade to Pro for more features.',
-                        style: TextStyle(color: Colors.white70, fontSize: 12),
-                      ),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () => context.push('/choose-plan'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: const Color(0xFF161616),
-                            elevation: 0,
-                          ),
-                          child: const Text('Upgrade Plan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                hasPlan && planDaysRemaining > 0
+                                  ? '${currentPlan[0].toUpperCase()}${currentPlan.substring(1)} Active' 
+                                  : hasPlan && planDaysRemaining <= 0 
+                                    ? 'Plan Expired'
+                                    : trialDaysRemaining > 0 ? '$trialDaysRemaining Days Trial Left' : 'Trial Expired',
+                                style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Text(
+                          hasPlan && planDaysRemaining > 0
+                            ? '$planDaysRemaining days remaining on your plan.'
+                            : 'Upgrade to Pro for more features.',
+                          style: const TextStyle(color: Colors.black87, fontSize: 12),
+                        ),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () => context.push('/choose-plan'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            ),
+                            child: Text(hasPlan ? 'Manage Plan' : 'Upgrade Plan', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -390,7 +427,7 @@ class _SidebarSectionLabel extends StatelessWidget {
   }
 }
 
-class _SidebarItem extends StatelessWidget {
+class _SidebarItem extends ConsumerWidget {
   final IconData icon;
   final String title;
   final bool isActive;
@@ -408,14 +445,48 @@ class _SidebarItem extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userState = ref.watch(userProvider);
+    
+    int trialDaysRemaining = 0;
+    int planDaysRemaining = 0;
+    bool isTrial = false;
+    bool hasPlan = false;
+    
+    if (userState.value != null && userState.value!.gym != null) {
+      final gymData = userState.value!.gym!;
+      isTrial = gymData['trialActive'] == true || gymData['trialActive'] == 'true';
+      final planStr = gymData['subscriptionPlan']?.toString().toLowerCase() ?? '';
+      hasPlan = planStr.isNotEmpty && planStr != 'null' && planStr != 'pending' && planStr != 'trial' && planStr != 'free trial';
+      
+      if (isTrial && gymData['createdAt'] != null) {
+         final createdAt = DateTime.parse(gymData['createdAt']);
+         final trialEnd = createdAt.add(const Duration(days: 14));
+         trialDaysRemaining = trialEnd.difference(DateTime.now()).inDays;
+         if (trialDaysRemaining < 0) trialDaysRemaining = 0;
+      }
+      
+      if (hasPlan && gymData['subscriptionExpiryDate'] != null) {
+         final expiryDate = DateTime.parse(gymData['subscriptionExpiryDate']);
+         planDaysRemaining = expiryDate.difference(DateTime.now()).inDays;
+         if (planDaysRemaining < 0) planDaysRemaining = 0;
+      } else if (hasPlan) {
+         planDaysRemaining = 30;
+      }
+    }
+
+    final bool requiresUpgrade = (!hasPlan && (!isTrial || trialDaysRemaining <= 0)) || (hasPlan && planDaysRemaining <= 0);
     // For Dashboard tab which has a special pill style when active
     if (isMainTab) {
       return HoverZoomEffect(
         scale: 1.02,
         child: InkWell(
         onTap: () {
-          if (route != null) context.go(route!);
+          if (requiresUpgrade && !isMainTab) {
+            _showUpgradeDialog(context);
+          } else if (route != null) {
+            context.go(route!);
+          }
         },
         borderRadius: BorderRadius.circular(12),
         child: Container(
@@ -428,8 +499,8 @@ class _SidebarItem extends StatelessWidget {
           child: Row(
             children: [
               Icon(
-                icon,
-                color: isActive ? Colors.black : Colors.white54,
+                (requiresUpgrade && !isMainTab) ? LucideIcons.lock : icon,
+                color: isActive ? Colors.black : ((requiresUpgrade && !isMainTab) ? Colors.redAccent : Colors.white54),
                 size: 20,
               ),
               const SizedBox(width: 16),
@@ -469,7 +540,11 @@ class _SidebarItem extends StatelessWidget {
       scale: 1.02,
       child: InkWell(
       onTap: () {
-        if (route != null) context.go(route!);
+        if (requiresUpgrade && !isMainTab) {
+          _showUpgradeDialog(context);
+        } else if (route != null) {
+          context.go(route!);
+        }
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -482,8 +557,8 @@ class _SidebarItem extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              icon,
-              color: isActive ? Colors.white : Colors.white54,
+              (requiresUpgrade && !isMainTab) ? LucideIcons.lock : icon,
+              color: isActive ? Colors.white : ((requiresUpgrade && !isMainTab) ? Colors.redAccent : Colors.white54),
               size: 20,
             ),
             const SizedBox(width: 16),
@@ -515,6 +590,47 @@ class _SidebarItem extends StatelessWidget {
     ),
   );
   }
+
+  void _showUpgradeDialog(BuildContext context) {
+    showUpgradeDialog(context);
+  }
+}
+
+void showUpgradeDialog(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      backgroundColor: const Color(0xFF161616),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.white.withOpacity(0.1)),
+      ),
+      title: const Text('Upgrade Required', style: TextStyle(color: Colors.white)),
+      content: const Text(
+        'Your trial has ended. Please upgrade your plan to access this feature.',
+        style: TextStyle(color: Colors.white70),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          style: TextButton.styleFrom(foregroundColor: Colors.white54),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: () {
+            Navigator.pop(context);
+            // In go_router, use go instead of push for root level paths
+            context.go('/choose-plan');
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFFCFFF50),
+            foregroundColor: Colors.black,
+          ),
+          child: const Text('Upgrade Plan', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+      ],
+    ),
+  );
 }
 
 class _TopBar extends ConsumerWidget {
@@ -544,9 +660,41 @@ class _TopBar extends ConsumerWidget {
       userName = userState.value!.user['name'] ?? '';
       userRole = userState.value!.user['role'] == 'superadmin' ? 'Superadmin' : 'Gym Owner';
       if (userState.value!.user['profileImage'] != null && userState.value!.user['profileImage'].toString().isNotEmpty) {
-        profileImage = userState.value!.user['profileImage'];
+        profileImage = userState.value!.user['profileImage'].toString().replaceAll('\\', '/');
+        if (!profileImage.startsWith('http') && !profileImage.startsWith('/')) {
+          profileImage = '/$profileImage';
+        }
       }
     }
+
+    bool hasPlan = false;
+    bool isTrial = false;
+    int trialDaysRemaining = 0;
+    int planDaysRemaining = 0;
+
+    if (userState.value != null && userState.value!.gym != null) {
+      final gymData = userState.value!.gym!;
+      final planStr = (gymData['subscriptionPlan'] ?? '').toString().toLowerCase();
+      isTrial = planStr == 'trial' || planStr == 'free trial';
+      hasPlan = planStr.isNotEmpty && planStr != 'null' && planStr != 'pending' && !isTrial;
+      
+      if (isTrial && gymData['createdAt'] != null) {
+         final createdAt = DateTime.parse(gymData['createdAt']);
+         final trialEnd = createdAt.add(const Duration(days: 14));
+         trialDaysRemaining = trialEnd.difference(DateTime.now()).inDays;
+         if (trialDaysRemaining < 0) trialDaysRemaining = 0;
+      }
+      
+      if (hasPlan && gymData['subscriptionExpiryDate'] != null) {
+         final expiryDate = DateTime.parse(gymData['subscriptionExpiryDate']);
+         planDaysRemaining = expiryDate.difference(DateTime.now()).inDays;
+         if (planDaysRemaining < 0) planDaysRemaining = 0;
+      } else if (hasPlan) {
+         planDaysRemaining = 30;
+      }
+    }
+
+    final bool requiresUpgrade = (!hasPlan && (!isTrial || trialDaysRemaining <= 0)) || (hasPlan && planDaysRemaining <= 0);
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: 16),
@@ -745,6 +893,12 @@ class _TopBar extends ConsumerWidget {
                         value: n.id,
                         padding: EdgeInsets.zero,
                         onTap: () {
+                          if (requiresUpgrade) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              showUpgradeDialog(context);
+                            });
+                            return;
+                          }
                           if (!n.isRead) {
                             ref.read(notificationsProvider.notifier).markAsRead(n.id);
                           }
@@ -819,7 +973,15 @@ class _TopBar extends ConsumerWidget {
                         child: Center(
                           child: Text('View All Notifications', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
                         ),
-                        onTap: () => context.go('/notifications'),
+                        onTap: () {
+                          if (requiresUpgrade) {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              showUpgradeDialog(context);
+                            });
+                          } else {
+                            context.go('/notifications');
+                          }
+                        },
                       ),
                     ],
                     child: _buildIconWithBadge(context, LucideIcons.bell, badgeCount: unreadCount, isHoverZoomed: false),
@@ -835,6 +997,10 @@ class _TopBar extends ConsumerWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     color: Theme.of(context).colorScheme.surface,
                     onSelected: (value) {
+                      if (requiresUpgrade) {
+                        showUpgradeDialog(context);
+                        return;
+                      }
                       if (value == 'view_all') {
                         context.go('/support');
                       } else {
@@ -962,6 +1128,10 @@ class _TopBar extends ConsumerWidget {
                         ),
                       ],
                       onSelected: (value) {
+                        if (requiresUpgrade) {
+                          showUpgradeDialog(context);
+                          return;
+                        }
                         if (value == 'add_event') {
                           _showAddEventDialog(context, ref);
                         }
@@ -998,6 +1168,22 @@ class _TopBar extends ConsumerWidget {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     color: Theme.of(context).colorScheme.surface,
                     onSelected: (value) async {
+                      if (value == 'dark_mode') {
+                        ref.read(themeProvider.notifier).toggleTheme();
+                        return;
+                      } else if (value == 'logout') {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.remove('token');
+                        SocketService().disconnect();
+                        if (context.mounted) context.go('/login');
+                        return;
+                      }
+
+                      if (requiresUpgrade) {
+                        showUpgradeDialog(context);
+                        return;
+                      }
+
                       if (value == 'search') {
                         showDialog(
                           context: context,
@@ -1017,17 +1203,10 @@ class _TopBar extends ConsumerWidget {
                         );
                       } else if (value == 'add_event') {
                         _showAddEventDialog(context, ref);
-                      } else if (value == 'dark_mode') {
-                        ref.read(themeProvider.notifier).toggleTheme();
                       } else if (value == 'profile') {
                         context.go('/profile');
                       } else if (value == 'settings') {
                         context.go('/settings');
-                      } else if (value == 'logout') {
-                        final prefs = await SharedPreferences.getInstance();
-                        await prefs.remove('token');
-                        SocketService().disconnect();
-                        if (context.mounted) context.go('/login');
                       }
                     },
                     itemBuilder: (context) => [
@@ -1108,7 +1287,7 @@ class _TopBar extends ConsumerWidget {
                           ClipOval(
                             child: profileImage.isNotEmpty
                                 ? Image.network(
-                                    profileImage.startsWith('http') ? profileImage : '${Env.apiUrl}$profileImage',
+                                    profileImage.startsWith('http') ? profileImage : '${Env.baseUrl}$profileImage',
                                     width: 24,
                                     height: 24,
                                     fit: BoxFit.cover,

@@ -361,7 +361,7 @@ class _ChoosePlanPageState extends State<ChoosePlanPage> {
                       const SizedBox(height: 32),
                       // Action Button
                       ElevatedButton(
-                        onPressed: () => context.go('/payment?plan=${title.toLowerCase()}'),
+                        onPressed: () => context.go('/payment?plan=${title.toLowerCase()}&billing=$_billingCycle'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primaryColor,
                           foregroundColor: Colors.white,

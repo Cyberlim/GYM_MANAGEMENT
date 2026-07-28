@@ -17,17 +17,17 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     {
       'title': 'Track Your Progress',
       'subtitle': 'Easily view your attendance and monitor your consistency to reach your fitness goals faster.',
-      'image': 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=1470&auto=format&fit=crop',
+      'image': 'assets/images/onboarding1.jpg',
     },
     {
       'title': 'Manage Memberships',
       'subtitle': 'Check your active plans, renew subscriptions, and explore new fitness packages right from your phone.',
-      'image': 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=1470&auto=format&fit=crop',
+      'image': 'assets/images/onboarding2.jpg',
     },
     {
       'title': 'Stay Connected',
       'subtitle': 'Access your gym profile, get notifications, and stay in touch with your trainers effortlessly.',
-      'image': 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1470&auto=format&fit=crop',
+      'image': 'assets/images/onboarding3.jpg',
     }
   ];
 
@@ -45,12 +45,15 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
             },
             itemCount: _onboardingData.length,
             itemBuilder: (context, index) {
+              final data = _onboardingData[index];
               return Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(
-                    _onboardingData[index]['image']!,
+                  Image.asset(
+                    data['image']!,
                     fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: double.infinity,
                   ),
                   Container(
                     decoration: BoxDecoration(

@@ -7,6 +7,7 @@ export interface IGym extends Document {
   contactPhone: string;
   logo: string;
   subscriptionPlan?: string;
+  subscriptionExpiryDate?: Date;
   trialActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -23,8 +24,9 @@ const GymSchema: Schema = new Schema(
     address: { type: String, required: true },
     contactPhone: { type: String, required: true },
     logo: { type: String, default: '' },
-    subscriptionPlan: { type: String },
-    trialActive: { type: Boolean, default: false },
+    subscriptionPlan: { type: String, default: 'Trial' },
+    trialActive: { type: Boolean, default: true },
+    subscriptionExpiryDate: { type: Date },
   },
   { timestamps: true }
 );

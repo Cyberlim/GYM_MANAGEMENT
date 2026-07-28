@@ -111,7 +111,7 @@ export const setupGym = async (req: AuthRequest, res: Response): Promise<void> =
 
 export const subscribePlan = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { plan, isTrialActive } = req.body;
+    const { plan, isTrialActive, billingCycle } = req.body;
 
     if (!plan) {
       res.status(400).json({ message: 'Please provide a plan' });
@@ -126,6 +126,19 @@ export const subscribePlan = async (req: AuthRequest, res: Response): Promise<vo
 
     gym.subscriptionPlan = plan;
     gym.trialActive = isTrialActive;
+    
+    // Add expiry based on billing cycle
+    const expiryDate = new Date();
+    let daysToAdd = 30; // default to monthly
+    
+    if (billingCycle === 'quarterly') {
+      daysToAdd = 90;
+    } else if (billingCycle === 'annually') {
+      daysToAdd = 365;
+    }
+    
+    expiryDate.setDate(expiryDate.getDate() + daysToAdd);
+    gym.subscriptionExpiryDate = expiryDate;
 
     const updatedGym = await gym.save();
     res.status(200).json(updatedGym);

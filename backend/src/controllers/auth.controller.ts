@@ -604,7 +604,66 @@ export const verify2FASetup = async (req: AuthRequest, res: Response): Promise<v
       } else {
         res.status(400).json({ message: 'Invalid code' });
       }
+    } else {
+      res.status(400).json({ message: '2FA method not configured' });
     }
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const disable2FA = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const user = await User.findById(req.user?._id);
+    if (!user) { res.status(404).json({ message: 'User not found' }); return; }
+
+    const { method, code } = req.body;
+
+    if (!method || !code) {
+      res.status(400).json({ message: 'Verification method and code are required to disable 2FA' });
+      return;
+    }
+
+    let isValid = false;
+
+    if (method === 'password') {
+      if (!user.password) {
+        res.status(400).json({ message: 'Password not set for this account' });
+        return;
+      }
+      isValid = await bcrypt.compare(code, user.password);
+    } else if (method === 'otp') {
+      if (user.twoFactorMethod === 'app' && user.twoFactorSecret) {
+        isValid = speakeasy.totp.verify({
+          secret: user.twoFactorSecret,
+          encoding: 'base32',
+          token: code,
+          window: 1,
+        });
+      } else if (user.twoFactorMethod === 'email' && user.twoFactorOTP) {
+        isValid = await bcrypt.compare(code, user.twoFactorOTP);
+      } else {
+        res.status(400).json({ message: 'No valid 2FA method found' });
+        return;
+      }
+    } else {
+      res.status(400).json({ message: 'Invalid verification method' });
+      return;
+    }
+
+    if (!isValid) {
+      res.status(400).json({ message: 'Invalid verification code or password' });
+      return;
+    }
+
+    user.settings = { ...user.settings, twoFactorEnabled: false } as any;
+    user.twoFactorSecret = undefined;
+    user.twoFactorMethod = 'none';
+    user.twoFactorOTP = undefined;
+    user.twoFactorOTPExpires = undefined;
+    await user.save();
+
+    res.json({ message: '2FA disabled successfully' });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

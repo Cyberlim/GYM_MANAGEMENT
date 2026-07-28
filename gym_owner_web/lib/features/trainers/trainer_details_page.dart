@@ -6,6 +6,8 @@ import 'package:gym_owner_web/features/members/providers/members_provider.dart';
 import 'package:gym_owner_web/features/trainers/trainers_page.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:gym_owner_web/core/config/env.dart';
+
 class TrainerDetailsPage extends ConsumerWidget {
   final String trainerId;
   const TrainerDetailsPage({super.key, required this.trainerId});
@@ -59,8 +61,13 @@ class TrainerDetailsPage extends ConsumerWidget {
                   child: InteractiveViewer(
                     minScale: 1.0,
                     maxScale: 5.0,
-                    child: trainer.imageUrl != null
-                        ? Image.network(trainer.imageUrl!, fit: BoxFit.cover)
+                    child: trainer.imageUrl != null && trainer.imageUrl.toString().isNotEmpty
+                        ? Image.network(
+                            trainer.imageUrl.toString().replaceAll('\\', '/').startsWith('http') 
+                                ? trainer.imageUrl.toString().replaceAll('\\', '/') 
+                                : '${Env.apiUrl}/${trainer.imageUrl.toString().replaceAll('\\', '/').replaceFirst(RegExp(r'^/+'), '')}',
+                            fit: BoxFit.cover,
+                          )
                         : Container(
                             color: Theme.of(context).colorScheme.primary,
                             child: Center(
@@ -136,11 +143,18 @@ class TrainerDetailsPage extends ConsumerWidget {
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
                       shape: BoxShape.circle,
-                      image: trainer.imageUrl != null 
-                          ? DecorationImage(image: NetworkImage(trainer.imageUrl!), fit: BoxFit.cover)
+                      image: trainer.imageUrl != null && trainer.imageUrl.toString().isNotEmpty
+                          ? DecorationImage(
+                              image: NetworkImage(
+                                trainer.imageUrl.toString().replaceAll('\\', '/').startsWith('http') 
+                                    ? trainer.imageUrl.toString().replaceAll('\\', '/') 
+                                    : '${Env.apiUrl}/${trainer.imageUrl.toString().replaceAll('\\', '/').replaceFirst(RegExp(r'^/+'), '')}'
+                              ),
+                              fit: BoxFit.cover,
+                            )
                           : null,
                     ),
-                    child: trainer.imageUrl == null
+                    child: (trainer.imageUrl == null || trainer.imageUrl.toString().isEmpty)
                         ? Center(
                             child: Text(
                               trainer.name.isNotEmpty ? trainer.name[0].toUpperCase() : '?',
