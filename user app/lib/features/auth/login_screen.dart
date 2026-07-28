@@ -113,13 +113,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF6C5CE7).withOpacity(0.2),
-                              shape: BoxShape.circle,
+                          ClipOval(
+                            child: Image.asset(
+                              'assets/images/app_logo.png',
+                              width: 80,
+                              height: 80,
+                              fit: BoxFit.cover,
                             ),
-                            child: const Icon(LucideIcons.dumbbell, size: 48, color: Color(0xFF6C5CE7)),
                           ),
                           const SizedBox(height: 24),
                           const Text(
