@@ -8,6 +8,7 @@ import 'package:gym_owner_web/core/providers/app_settings_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:http_parser/http_parser.dart';
 
 class GymSetupPage extends ConsumerStatefulWidget {
   const GymSetupPage({super.key});
@@ -77,6 +78,7 @@ class _GymSetupPageState extends ConsumerState<GymSetupPage> {
           'logo',
           bytes,
           filename: _logoFile!.name,
+          contentType: MediaType('image', 'png'),
         );
         request.files.add(multipartFile);
       }

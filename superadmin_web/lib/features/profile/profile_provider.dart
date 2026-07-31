@@ -163,8 +163,28 @@ class ProfileNotifier extends Notifier<UserProfile> {
     state = state.copyWith(avatarBytes: avatarBytes);
   }
 
-  void clearAvatar() {
-    state = state.copyWith(clearAvatar: true);
+  Future<bool> clearAvatar() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      if (token == null) return false;
+
+      final response = await http.delete(
+        Uri.parse('${Env.apiUrl}/auth/profile-image'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        state = state.copyWith(clearAvatar: true);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Failed to clear avatar: $e');
+      return false;
+    }
   }
 
   Future<bool> updatePassword(String currentPassword, String newPassword) async {

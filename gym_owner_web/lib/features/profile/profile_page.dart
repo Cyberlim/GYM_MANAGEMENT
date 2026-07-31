@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:gym_owner_web/core/providers/user_provider.dart';
 import 'package:gym_owner_web/data/api/api_service.dart';
 import 'package:gym_owner_web/features/members/providers/members_provider.dart';
+import 'package:http_parser/http_parser.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -477,22 +478,85 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: isUploading ? null : () async {
-                      final ImagePicker picker = ImagePicker();
-                      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
-                      if (image != null) {
-                        setState(() {
-                          selectedImage = image;
-                        });
-                      }
-                    },
-                    icon: const Icon(LucideIcons.upload, size: 16),
-                    label: const Text('Upload New Image'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      foregroundColor: Theme.of(context).colorScheme.onSurface,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: isUploading ? null : () async {
+                          final ImagePicker picker = ImagePicker();
+                          final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+                          if (image != null) {
+                            setState(() {
+                              selectedImage = image;
+                            });
+                          }
+                        },
+                        icon: const Icon(LucideIcons.upload, size: 16),
+                        label: const Text('Upload New Image'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          foregroundColor: Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      if (currentUrl.isNotEmpty && !currentUrl.contains('unsplash.com')) ...[
+                        const SizedBox(width: 12),
+                        OutlinedButton.icon(
+                          onPressed: isUploading ? null : () async {
+                            setState(() {
+                              isUploading = true;
+                            });
+                            try {
+                              final prefs = await SharedPreferences.getInstance();
+                              final token = prefs.getString('token');
+                              
+                              final response = await http.delete(
+                                Uri.parse('${Env.apiUrl}/auth/profile-image'),
+                                headers: {
+                                  'Authorization': 'Bearer $token',
+                                },
+                              );
+                              
+                              if (response.statusCode == 200) {
+                                if (currentUrl.startsWith('http')) {
+                                  try {
+                                    await ref.read(apiServiceProvider).deleteFile(currentUrl);
+                                  } catch (e) {
+                                    debugPrint('Failed to delete old avatar from cloud: $e');
+                                  }
+                                }
+                                ref.read(userProvider.notifier).refresh();
+                                if (context.mounted) {
+                                  Navigator.pop(context);
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Avatar removed successfully.'), backgroundColor: Colors.green)
+                                  );
+                                }
+                              } else {
+                                throw Exception('Failed to remove image');
+                              }
+                            } catch (e) {
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red)
+                                );
+                              }
+                            } finally {
+                              if (context.mounted) {
+                                setState(() {
+                                  isUploading = false;
+                                });
+                              }
+                            }
+                          },
+                          icon: const Icon(LucideIcons.trash2, size: 16),
+                          label: const Text('Remove'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.red,
+                            side: const BorderSide(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
@@ -523,7 +587,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       var multipartFile = http.MultipartFile.fromBytes(
                         'profileImage',
                         bytes,
-                        filename: selectedImage!.name,
+                        filename: 'avatar.png',
+                        contentType: MediaType('image', 'png')
                       );
                       request.files.add(multipartFile);
                       
@@ -785,7 +850,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         var request = http.MultipartRequest('PUT', Uri.parse('${Env.apiUrl}/auth/gym-logo'));
                         request.headers['Authorization'] = 'Bearer $token';
                         var bytes = await newLogo!.readAsBytes();
-                        var multipartFile = http.MultipartFile.fromBytes('logo', bytes, filename: newLogo!.name);
+                        var multipartFile = http.MultipartFile.fromBytes('logo', bytes, filename: newLogo!.name, contentType: MediaType('image', 'png'));
                         request.files.add(multipartFile);
                         var logoRes = await request.send();
                         if (logoRes.statusCode != 200) {

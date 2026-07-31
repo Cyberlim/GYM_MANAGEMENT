@@ -2,6 +2,7 @@ import 'package:gym_owner_web/core/config/env.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http_parser/http_parser.dart';
 
 class SuspensionException implements Exception {
   final String message;
@@ -75,6 +76,7 @@ class ApiService {
       'file',
       bytes,
       filename: filename,
+      contentType: MediaType('image', 'png'),
     ));
 
     final streamedResponse = await request.send();

@@ -12,6 +12,7 @@ import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/custom_text_field.dart';
 import '../../shared/widgets/primary_button.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http_parser/http_parser.dart';
 import 'profile_provider.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
@@ -197,7 +198,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         if (token != null) {
           final request = http.MultipartRequest('PUT', Uri.parse('${Env.apiUrl}/auth/profile-image'));
           request.headers['Authorization'] = 'Bearer $token';
-          request.files.add(http.MultipartFile.fromBytes('profileImage', bytes, filename: 'avatar.png'));
+          request.files.add(http.MultipartFile.fromBytes('profileImage', bytes, filename: 'avatar.png', contentType: MediaType('image', 'png')));
           
           final response = await request.send();
           if (response.statusCode == 200) {
@@ -301,8 +302,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Profile Avatar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
-                const SizedBox(height: 24),
+                Builder(builder: (context) {
+                  final hasImage = profile.avatarBytes != null || (profile.profileImage != null && profile.profileImage!.isNotEmpty);
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Profile Avatar', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).colorScheme.onSurface)),
+                      const SizedBox(height: 24),
                 isMobile
                     ? Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
@@ -326,15 +332,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             ),
                           ),
                           const SizedBox(height: 24),
-                          Row(
+                          Column(
                             children: [
-                              Expanded(
-                                child: PrimaryButton(text: 'Upload New', onPressed: _pickAndCropImage, isFullWidth: true, icon: LucideIcons.upload),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: SizedBox(
+                              PrimaryButton(text: 'Upload New', onPressed: _pickAndCropImage, isFullWidth: true, icon: LucideIcons.upload),
+                              if (hasImage) ...[
+                                const SizedBox(height: 12),
+                                SizedBox(
                                   height: 48,
+                                  width: double.infinity,
                                   child: OutlinedButton.icon(
                                     onPressed: () {
                                       ref.read(profileProvider.notifier).clearAvatar();
@@ -351,7 +356,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                     ),
                                   ),
                                 ),
-                              ),
+                              ],
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -390,12 +395,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               children: [
                                 Row(
                                   children: [
-                                    Expanded(
-                                      child: PrimaryButton(text: 'Upload New', onPressed: _pickAndCropImage, isFullWidth: true, icon: LucideIcons.upload),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: SizedBox(
+                                    PrimaryButton(text: 'Upload New', onPressed: _pickAndCropImage, isFullWidth: false, icon: LucideIcons.upload),
+                                    if (hasImage) ...[
+                                      const SizedBox(width: 12),
+                                      SizedBox(
                                         height: 48,
                                         child: OutlinedButton.icon(
                                           onPressed: () {
@@ -406,14 +409,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                           style: OutlinedButton.styleFrom(
                                             foregroundColor: Colors.red,
                                             side: const BorderSide(color: Colors.red),
-                                            padding: EdgeInsets.zero,
+                                            padding: const EdgeInsets.symmetric(horizontal: 24),
                                             shape: RoundedRectangleBorder(
                                               borderRadius: BorderRadius.circular(12),
                                             ),
                                           ),
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ],
                                 ),
                                 const SizedBox(height: 12),
@@ -423,6 +426,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           ),
                         ],
                       ),
+                    ],
+                  );
+                }),
                 
                 const SizedBox(height: 48),
                 const Divider(),

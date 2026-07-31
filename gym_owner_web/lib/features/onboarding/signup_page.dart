@@ -11,6 +11,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'google_btn.dart';
+import 'package:http_parser/http_parser.dart';
 
 class SignupPage extends ConsumerStatefulWidget {
   const SignupPage({super.key});
@@ -75,6 +76,7 @@ class _SignupPageState extends ConsumerState<SignupPage> {
           'profileImage',
           bytes,
           filename: _profileImage!.name,
+          contentType: MediaType('image', 'png'),
         );
         request.files.add(multipartFile);
       }

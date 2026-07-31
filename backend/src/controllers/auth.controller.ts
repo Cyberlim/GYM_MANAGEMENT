@@ -178,6 +178,35 @@ export const updateProfileImage = async (req: AuthRequest, res: Response): Promi
   }
 };
 
+export const deleteProfileImage = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?._id;
+    if (!userId) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    // Note: If you want to delete from Cloudinary here, you'd extract public_id and call cloudinary.uploader.destroy.
+    // For now, we'll just remove the reference from the user's profile.
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { $unset: { profileImage: 1 } },
+      { new: true }
+    );
+
+    res.status(200).json({ message: 'Profile image deleted', user: updatedUser });
+  } catch (error: any) {
+    console.error('Delete Profile Image Error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export const updateGymLogo = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const user = req.user;

@@ -1,5 +1,5 @@
 import express from 'express';
-import { registerUser, loginUser, googleLogin, getMe, updateProfileImage, updateProfile, updateGymLogo, updateSettings, updatePassword, setup2FA, verify2FASetup, verify2FALogin, sendFallback2FA, verifyEmailRegistration, requestPasswordReset, resetPassword, getActiveSessions, revokeSession, checkEmail2FA, disable2FA } from '../controllers/auth.controller';
+import { registerUser, loginUser, googleLogin, getMe, updateProfileImage, deleteProfileImage, updateProfile, updateGymLogo, updateSettings, updatePassword, setup2FA, verify2FASetup, verify2FALogin, sendFallback2FA, verifyEmailRegistration, requestPasswordReset, resetPassword, getActiveSessions, revokeSession, checkEmail2FA, disable2FA } from '../controllers/auth.controller';
 import { upload } from '../config/cloudinary';
 import { protect } from '../middlewares/auth.middleware';
 
@@ -14,6 +14,7 @@ router.post('/reset-password', resetPassword);
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
 router.put('/profile-image', protect, upload.single('profileImage'), updateProfileImage);
+router.delete('/profile-image', protect, deleteProfileImage);
 router.put('/gym-logo', protect, upload.single('logo'), updateGymLogo);
 router.put('/settings', protect, updateSettings);
 router.put('/password', protect, updatePassword);
