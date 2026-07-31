@@ -43,8 +43,9 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   }
 
   void _checkGymSetup() {
-    final userState = ref.read(userProvider).value;
-    if (userState != null && userState.gym == null) {
+    final userState = ref.read(userProvider);
+    // Only redirect if data has fully loaded (not still loading)
+    if (!userState.isLoading && userState.value != null && userState.value!.gym == null) {
       if (mounted) {
         context.go('/gym-setup');
       }
@@ -91,7 +92,8 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   @override
   Widget build(BuildContext context) {
     ref.listen(userProvider, (previous, next) {
-      if (next.value != null && next.value!.gym == null) {
+      // Only redirect when data is fully loaded (not during loading transitions)
+      if (!next.isLoading && next.value != null && next.value!.gym == null) {
         if (mounted) {
           context.go('/gym-setup');
         }
