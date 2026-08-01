@@ -777,13 +777,6 @@ class _TopBar extends ConsumerWidget {
                             searchTerms.addAll(staffState.value!.map((s) => s.name));
                           }
                           
-                          if (searchTerms.isEmpty) {
-                            searchTerms.addAll([
-                              'Emily Johnson', 'Michael Brown', 'Sophia Davis',
-                              'John Doe', 'Sarah Connor', 'Invoice INV-001',
-                              'Invoice INV-002', 'Gold Plan', 'Silver Plan',
-                            ]);
-                          }
                           final filtered = searchTerms.where((String option) {
                             return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
                           });

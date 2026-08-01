@@ -3,7 +3,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/providers/superadmin_provider.dart';
-import '../../data/mock/mock_data.dart';
 import '../../core/theme/app_theme.dart';
 
 class GymOwnerDetailsPage extends ConsumerWidget {

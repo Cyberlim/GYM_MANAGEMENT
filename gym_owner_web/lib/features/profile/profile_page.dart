@@ -47,9 +47,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ? '${Env.baseUrl}$profileImage' 
           : '${Env.baseUrl}/$profileImage';
     }
-    if (profileImage.isEmpty) {
-      profileImage = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=150&h=150';
-    }
 
     String gymName = gym?['name'] ?? 'Not provided';
     String address = gym?['address'] ?? 'Not provided';
@@ -78,7 +75,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: () => _showEditAvatarDialog(context, profileImage),
+                  onTap: () => _showEditAvatarDialog(context, profileImage, userName),
                   child: MouseRegion(
                     cursor: SystemMouseCursors.click,
                     child: Stack(
@@ -86,7 +83,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         CircleAvatar(
                           radius: 50,
                           backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                          backgroundImage: NetworkImage(profileImage),
+                          backgroundImage: profileImage.isNotEmpty ? NetworkImage(profileImage) : null,
+                          child: profileImage.isEmpty
+                              ? Text(
+                                  userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                                  style: TextStyle(fontSize: 40, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+                                )
+                              : null,
                         ),
                         Positioned(
                           bottom: 0,
@@ -424,7 +427,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
-  void _showEditAvatarDialog(BuildContext context, String currentUrl) {
+  void _showEditAvatarDialog(BuildContext context, String currentUrl, String userName) {
     String tempUrl = currentUrl;
     XFile? selectedImage;
     bool isUploading = false;
@@ -469,11 +472,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                   return const CircularProgressIndicator();
                                 },
                               )
-                            : Image.network(
-                                tempUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) => const Icon(LucideIcons.imageOff, size: 48),
-                              ),
+                            : tempUrl.isNotEmpty
+                                ? Image.network(
+                                    tempUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) => const Icon(LucideIcons.imageOff, size: 48),
+                                  )
+                                : Container(
+                                    color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      userName.isNotEmpty ? userName[0].toUpperCase() : 'U',
+                                      style: TextStyle(fontSize: 80, color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
                       ),
                     ),
                   ),

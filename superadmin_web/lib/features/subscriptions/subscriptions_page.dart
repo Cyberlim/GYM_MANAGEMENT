@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/mock/mock_data.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/data_table_widget.dart';
 

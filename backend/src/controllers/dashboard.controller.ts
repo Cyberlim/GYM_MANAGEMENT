@@ -78,16 +78,16 @@ export const getDashboardStats = async (req: AuthRequest, res: Response): Promis
     const totalStaff = await Staff.countDocuments({ gymId });
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const startOfWeek = new Date(today);
-    startOfWeek.setDate(today.getDate() - today.getDay());
+    const todayUtc = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+    const yesterdayUtc = new Date(todayUtc);
+    yesterdayUtc.setUTCDate(todayUtc.getUTCDate() - 1);
+    const startOfWeekUtc = new Date(todayUtc);
+    startOfWeekUtc.setUTCDate(todayUtc.getUTCDate() - todayUtc.getUTCDay());
 
     const [todayCheckins, yesterdayCheckins, thisWeekCheckins] = await Promise.all([
-      CheckIn.aggregate([ { $match: { gymId, checkInTime: { $gte: today } } }, { $group: { _id: '$role', count: { $sum: 1 }, late: { $sum: { $cond: [{ $eq: ['$status', 'Late'] }, 1, 0] } } } } ]),
-      CheckIn.aggregate([ { $match: { gymId, checkInTime: { $gte: yesterday, $lt: today } } }, { $group: { _id: '$role', count: { $sum: 1 }, late: { $sum: { $cond: [{ $eq: ['$status', 'Late'] }, 1, 0] } } } } ]),
-      CheckIn.aggregate([ { $match: { gymId, checkInTime: { $gte: startOfWeek } } }, { $group: { _id: '$role', count: { $sum: 1 }, late: { $sum: { $cond: [{ $eq: ['$status', 'Late'] }, 1, 0] } } } } ])
+      CheckIn.aggregate([ { $match: { gymId, date: todayUtc, status: { $in: ['Present', 'Late'] } } }, { $group: { _id: '$role', count: { $sum: 1 }, late: { $sum: { $cond: [{ $eq: ['$status', 'Late'] }, 1, 0] } } } } ]),
+      CheckIn.aggregate([ { $match: { gymId, date: yesterdayUtc, status: { $in: ['Present', 'Late'] } } }, { $group: { _id: '$role', count: { $sum: 1 }, late: { $sum: { $cond: [{ $eq: ['$status', 'Late'] }, 1, 0] } } } } ]),
+      CheckIn.aggregate([ { $match: { gymId, date: { $gte: startOfWeekUtc }, status: { $in: ['Present', 'Late'] } } }, { $group: { _id: '$role', count: { $sum: 1 }, late: { $sum: { $cond: [{ $eq: ['$status', 'Late'] }, 1, 0] } } } } ])
     ]);
 
     const buildStatsForRole = (role: string, total: number) => {
